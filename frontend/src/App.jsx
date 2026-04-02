@@ -26,7 +26,7 @@ export default function App() {
   return (
     <div className="flex h-screen bg-gray-950 text-white overflow-hidden">
       <Sidebar filters={filters} onChange={setFilters} />
-      <main className="flex-1 overflow-y-auto p-6 space-y-10">
+      <main className="flex-1 min-w-0 overflow-y-auto p-6 space-y-10">
         <div>
           <h1 className="text-3xl font-bold text-blue-400">NarrativeTracker</h1>
           <p className="text-gray-400 text-sm mt-1">

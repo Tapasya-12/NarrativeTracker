@@ -26,7 +26,7 @@ export default function NetworkGraph() {
   const [netType,    setNetType]    = useState("subreddit")
   const [removeNode, setRemoveNode] = useState(null)
   const [selected,   setSelected]   = useState(null)
-  const [dimensions, setDimensions] = useState({ w: 800, h: 420 })
+  const [dimensions, setDimensions] = useState({ w: 900, h: 420 })
   const containerRef = useRef(null)
 
   // ── Fetch network data — re-fetches when type or removed node changes ───────
@@ -37,14 +37,25 @@ export default function NetworkGraph() {
 
   // ── Measure container width for responsive graph sizing ──────────────────
   useEffect(() => {
+  const measure = () => {
     if (!containerRef.current) return
-    const observer = new ResizeObserver((entries) => {
-      const { width } = entries[0].contentRect
-      setDimensions({ w: Math.floor(width), h: 420 })
-    })
-    observer.observe(containerRef.current)
-    return () => observer.disconnect()
-  }, [])
+    const w = containerRef.current.getBoundingClientRect().width
+    if (w > 0) setDimensions({ w: Math.floor(w), h: 420 })
+  }
+
+  measure() // measure immediately on mount
+
+  const observer = new ResizeObserver(measure)
+  if (containerRef.current) observer.observe(containerRef.current)
+
+  // Also measure after a short delay in case layout hasn't settled
+  const t = setTimeout(measure, 150)
+
+  return () => {
+    observer.disconnect()
+    clearTimeout(t)
+  }
+}, [])
 
   // ── Reset selected node when switching network types ─────────────────────
   useEffect(() => {
@@ -164,7 +175,7 @@ export default function NetworkGraph() {
     )
 
   return (
-    <section>
+    <section className="w-full">
       {/* ── Header row ── */}
       <div className="flex items-start justify-between mb-3 flex-wrap gap-3">
         <div>
@@ -229,9 +240,9 @@ export default function NetworkGraph() {
       {/* ── Force graph canvas ── */}
       <div
         ref={containerRef}
-        className="bg-gray-900 rounded overflow-hidden"
-        style={{ height: dimensions.h }}
-      >
+        className="bg-gray-900 rounded overflow-hidden w-full block"
+        style={{ height: dimensions.h, width: "100%" }}
+    >
         <ForceGraph2D
           graphData={graphData}
           nodeColor={nodeColor}
