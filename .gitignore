@@ -1,0 +1,74 @@
+# ==============================
+# Python
+# ==============================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.py[cod]
+*.so
+
+# Virtual environment
+venv/
+.env/
+.env
+
+# ==============================
+# Environment variables / secrets
+# ==============================
+.env
+*.env
+
+# ==============================
+# Data files (optional - choose carefully)
+# ==============================
+# If dataset is large, ignore it
+# data/*.jsonl
+# data/*.parquet
+# data/*.npy
+# data/*.index
+
+# If small, you can keep them (recommended for assignment)
+
+# ==============================
+# ML artifacts (usually ignore)
+# ==============================
+*.npy
+*.index
+*.pt
+*.bin
+*.model
+
+# ==============================
+# Logs
+# ==============================
+*.log
+
+# ==============================
+# OS files
+# ==============================
+.DS_Store
+Thumbs.db
+
+# ==============================
+# VS Code
+# ==============================
+.vscode/
+
+# ==============================
+# Node (if you use frontend later)
+# ==============================
+node_modules/
+dist/
+build/
+
+# ==============================
+# Jupyter (if used)
+# ==============================
+.ipynb_checkpoints/
+
+# ==============================
+# Misc
+# ==============================
+*.sqlite3
+*.db
