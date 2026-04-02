@@ -4,103 +4,200 @@ import { BLOC_COLORS } from "../App"
 
 const BLOC_LABELS = {
   left_radical: "Left Radical",
-  center_left: "Center Left",
-  right: "Right",
-  mixed: "Mixed",
+  center_left:  "Center Left",
+  right:        "Right",
+  mixed:        "Mixed",
+}
+
+function SidebarSkeleton() {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "16px" }}>
+      {[1,2,3,4,5,6,7,8].map(function(i) {
+        return (
+          <div
+            key={i}
+            className="animate-pulse"
+            style={{
+              height: "28px", borderRadius: "6px",
+              background: "rgba(255,255,255,0.05)",
+              width: i % 3 === 0 ? "60%" : "100%",
+            }}
+          />
+        )
+      })}
+    </div>
+  )
 }
 
 export default function Sidebar({ filters, onChange }) {
-  const { data } = useApi("/api/subreddits")
-
-  if (!data)
-    return (
-      <div className="w-64 bg-gray-900 p-4 text-gray-400 text-sm">
-        Loading...
-      </div>
-    )
-
-  // Group subreddits by bloc
-  const groups = {}
-  data.forEach((s) => {
-    if (!groups[s.bloc]) groups[s.bloc] = []
-    groups[s.bloc].push(s)
-  })
+  const { data, loading, error } = useApi("/api/subreddits")
 
   const showWPWarning =
-    filters.subreddit === "worldpolitics" || filters.subreddit === "all"
+    filters.subreddit === "worldpolitics" ||
+    filters.subreddit === "all"
 
   return (
-    <div className="w-72 bg-gray-900 border-r border-gray-800 overflow-y-auto flex-shrink-0 p-4">
-      <h2 className="text-xl font-bold text-blue-400 mb-1">NarrativeTracker</h2>
-      <p className="text-gray-500 text-xs mb-4">Political narrative analysis</p>
+    <div style={{
+      width: "260px",
+      background: "#0a0f1a",
+      borderRight: "1px solid rgba(255,255,255,0.07)",
+      overflowY: "auto",
+      flexShrink: 0,
+      display: "flex",
+      flexDirection: "column",
+    }}>
+      {/* Logo area */}
+      <div style={{
+        padding: "20px 16px 12px",
+        borderBottom: "1px solid rgba(255,255,255,0.06)",
+      }}>
+        <h2 style={{
+          fontSize: "16px", fontWeight: "700",
+          color: "#3b82f6", marginBottom: "2px",
+        }}>
+          NarrativeTracker
+        </h2>
+        <p style={{ fontSize: "11px", color: "#374151" }}>
+          Political narrative analysis
+        </p>
+      </div>
 
-      {/* Subreddit filter */}
-      <div className="mb-4">
-        <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">
+      <div style={{ padding: "12px 16px", flex: 1 }}>
+
+        {/* Filter label */}
+        <p style={{
+          fontSize: "10px", color: "#4b5563",
+          textTransform: "uppercase", letterSpacing: "0.07em",
+          marginBottom: "8px",
+        }}>
           Filter by Subreddit
         </p>
-        <button
-          onClick={() => onChange({ ...filters, subreddit: "all" })}
-          className={`w-full text-left px-2 py-1 rounded text-sm mb-1 ${
-            filters.subreddit === "all"
-              ? "bg-blue-900 text-blue-200"
-              : "text-gray-300 hover:bg-gray-800"
-          }`}
-        >
-          All subreddits
-        </button>
 
-        {Object.entries(groups).map(([bloc, subs]) => (
-          <div key={bloc} className="mb-3">
-            <p
-              className="text-xs font-semibold mb-1 uppercase"
-              style={{ color: BLOC_COLORS[bloc] }}
-            >
-              {BLOC_LABELS[bloc]}
-            </p>
-            {subs.map((s) => (
-              <button
-                key={s.subreddit}
-                onClick={() => onChange({ ...filters, subreddit: s.subreddit })}
-                className={`w-full text-left px-2 py-1 rounded text-sm mb-0.5 ${
-                  filters.subreddit === s.subreddit
-                    ? "bg-gray-700 text-white"
-                    : "text-gray-400 hover:bg-gray-800"
-                }`}
-              >
-                r/{s.subreddit}
-                <span className="float-right text-gray-600 text-xs">
-                  {s.count}
-                </span>
-              </button>
-            ))}
-          </div>
-        ))}
-      </div>
+        {/* Loading skeleton */}
+        {loading && <SidebarSkeleton />}
 
-      {/* Granularity toggle */}
-      <div className="mb-4">
-        <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">
-          Time Granularity
-        </p>
-        <div className="flex gap-1">
-          {["day", "week", "month"].map((g) => (
+        {/* Error */}
+        {error && !loading && (
+          <p style={{ fontSize: "12px", color: "#ef4444" }}>
+            Failed to load subreddits
+          </p>
+        )}
+
+        {/* Subreddit list */}
+        {data && !loading && (
+          <div>
+            {/* All subreddits button */}
             <button
-              key={g}
-              onClick={() => onChange({ ...filters, granularity: g })}
-              className={`flex-1 py-1 rounded text-xs ${
-                filters.granularity === g
-                  ? "bg-blue-700 text-white"
-                  : "bg-gray-800 text-gray-400"
-              }`}
+              onClick={function() { onChange(Object.assign({}, filters, { subreddit: "all" })) }}
+              style={{
+                width: "100%", textAlign: "left",
+                padding: "6px 8px", borderRadius: "6px",
+                fontSize: "13px", marginBottom: "8px",
+                border: "none", cursor: "pointer",
+                background: filters.subreddit === "all"
+                  ? "rgba(59,130,246,0.15)"
+                  : "transparent",
+                color: filters.subreddit === "all" ? "#93c5fd" : "#9ca3af",
+              }}
             >
-              {g}
+              All subreddits
             </button>
-          ))}
-        </div>
-      </div>
 
-      <WorldPoliticsWarning visible={showWPWarning} />
+            {/* Grouped by bloc */}
+            {(function() {
+              const groups = {}
+              data.forEach(function(s) {
+                if (!groups[s.bloc]) groups[s.bloc] = []
+                groups[s.bloc].push(s)
+              })
+              return Object.entries(groups).map(function(entry) {
+                const bloc = entry[0]
+                const subs = entry[1]
+                return (
+                  <div key={bloc} style={{ marginBottom: "12px" }}>
+                    <p style={{
+                      fontSize: "10px", fontWeight: "700",
+                      textTransform: "uppercase", letterSpacing: "0.06em",
+                      color: BLOC_COLORS[bloc] || "#6b7280",
+                      marginBottom: "4px", padding: "0 8px",
+                    }}>
+                      {BLOC_LABELS[bloc] || bloc}
+                    </p>
+                    {subs.map(function(s) {
+                      const isActive = filters.subreddit === s.subreddit
+                      return (
+                        <button
+                          key={s.subreddit}
+                          onClick={function() {
+                            onChange(Object.assign({}, filters, { subreddit: s.subreddit }))
+                          }}
+                          style={{
+                            width: "100%", textAlign: "left",
+                            padding: "5px 8px", borderRadius: "6px",
+                            fontSize: "12px", marginBottom: "2px",
+                            border: "none", cursor: "pointer",
+                            background: isActive
+                              ? "rgba(255,255,255,0.08)"
+                              : "transparent",
+                            color: isActive ? "white" : "#6b7280",
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <span>{"r/" + s.subreddit}</span>
+                          <span style={{
+                            fontSize: "10px",
+                            color: isActive ? "#9ca3af" : "#374151",
+                          }}>
+                            {s.count}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )
+              })
+            })()}
+          </div>
+        )}
+
+        {/* Granularity toggle */}
+        <div style={{ marginTop: "8px", marginBottom: "12px" }}>
+          <p style={{
+            fontSize: "10px", color: "#4b5563",
+            textTransform: "uppercase", letterSpacing: "0.07em",
+            marginBottom: "8px",
+          }}>
+            Time Granularity
+          </p>
+          <div style={{ display: "flex", gap: "4px" }}>
+            {["day", "week", "month"].map(function(g) {
+              const isActive = filters.granularity === g
+              return (
+                <button
+                  key={g}
+                  onClick={function() {
+                    onChange(Object.assign({}, filters, { granularity: g }))
+                  }}
+                  style={{
+                    flex: 1, padding: "5px 0",
+                    borderRadius: "6px", fontSize: "11px",
+                    border: "none", cursor: "pointer",
+                    background: isActive ? "#1d4ed8" : "#1f2937",
+                    color: isActive ? "white" : "#6b7280",
+                  }}
+                >
+                  {g}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <WorldPoliticsWarning visible={showWPWarning} />
+
+      </div>
     </div>
   )
 }
