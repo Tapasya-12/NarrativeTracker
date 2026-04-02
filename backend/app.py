@@ -4,6 +4,7 @@ import pandas as pd, numpy as np, faiss, json, os
 from dotenv import load_dotenv
 
 load_dotenv()
+print("DEBUG KEY:", os.getenv("GROQ_API_KEY"))
 
 app = Flask(__name__)
 CORS(app)
@@ -25,27 +26,37 @@ with open(f"{DATA}/clusters.json") as f: clust_data = json.load(f)
 from sentence_transformers import SentenceTransformer
 embed_model = SentenceTransformer("all-MiniLM-L6-v2")
 
+# ── GROQ SETUP (replaces Claude) ─────────────────────────────────────────────
 try:
-    import anthropic
-    ai = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+    from groq import Groq
+    groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
     AI_OK = True
-except: AI_OK = False
+    print("Groq AI loaded successfully")
+except Exception as e:
+    AI_OK = False
+    print(f"Groq AI not available: {e}")
 
 print(f"Ready. {len(df)} posts loaded. AI={AI_OK}")
 
 
 def claude(prompt, max_tokens=200):
-    """Call Claude API with fallback — never crashes."""
-    if not AI_OK: return "AI summary unavailable — API key not configured."
+    """
+    Drop-in replacement for Claude using Groq.
+    Same function signature — no other code needs to change.
+    Model: llama-3.1-8b-instant (free, very fast)
+    """
+    if not AI_OK:
+        return "AI summary unavailable — Groq API key not configured."
     try:
-        r = ai.messages.create(
-            model="claude-haiku-4-5-20251001",
+        r = groq_client.chat.completions.create(
+            model="llama-3.1-8b-instant",
             max_tokens=max_tokens,
-            messages=[{"role":"user","content":prompt}]
+            messages=[{"role": "user", "content": prompt}]
         )
-        return r.content[0].text
+        return r.choices[0].message.content
     except Exception as e:
-        return f"AI summary temporarily unavailable: {str(e)[:50]}"
+        print(f"FULL GROQ ERROR: {e}")
+        return f"AI summary temporarily unavailable: {str(e)[:100]}"
 
 
 # ── ENDPOINT 1: HEALTH ────────────────────────────────────────────────────────
@@ -261,7 +272,7 @@ def velocity():
         "total": len(results)
     })
 
-# ── ENDPOINT 13: SUMMARIZE (Claude) ──────────────────────────────────────────
+# ── ENDPOINT 13: SUMMARIZE (Groq) ────────────────────────────────────────────
 @app.route("/api/summarize", methods=["POST"])
 def summarize():
     d = request.json
@@ -279,7 +290,7 @@ def summarize():
     )
     return jsonify({"summary": claude(prompt, 200)})
 
-# ── ENDPOINT 14: SUGGEST QUERIES (Claude) ────────────────────────────────────
+# ── ENDPOINT 14: SUGGEST QUERIES (Groq) ──────────────────────────────────────
 @app.route("/api/suggest_queries", methods=["POST"])
 def suggest_queries():
     d = request.json
@@ -295,12 +306,16 @@ def suggest_queries():
     )
     try:
         text = claude(prompt, 100)
+        # Clean response in case model adds extra text
+        text = text.strip()
+        if not text.startswith("["): 
+            text = text[text.find("["):text.rfind("]")+1]
         suggestions = json.loads(text)
         return jsonify({"suggestions": suggestions[:3]})
     except:
         return jsonify({"suggestions":[]})
 
-# ── ENDPOINT 15: NARRATIVE ANALYSIS (Claude) ─────────────────────────────────
+# ── ENDPOINT 15: NARRATIVE ANALYSIS (Groq) ───────────────────────────────────
 @app.route("/api/narrative_analysis", methods=["POST"])
 def narrative_analysis():
     blocs = request.json.get("blocs",{})
@@ -329,4 +344,3 @@ def source_network():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
-
