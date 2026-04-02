@@ -6,39 +6,89 @@ const BASE = import.meta.env.VITE_API_URL || ""
 export default function AISummary({ type, data, context }) {
   const [summary, setSummary] = useState("")
   const [loading, setLoading] = useState(false)
+  const [error,   setError]   = useState(false)
 
-  useEffect(() => {
+  useEffect(function() {
     if (!data || !data.length) return
+
     setLoading(true)
     setSummary("")
+    setError(false)
+
     axios
       .post(BASE + "/api/summarize", {
         type,
         data: data.slice(0, 30),
         context,
       })
-      .then((r) => {
-        setSummary(r.data.summary)
+      .then(function(r) {
+        setSummary(r.data.summary || "")
         setLoading(false)
       })
-      .catch(() => {
-        setSummary("AI summary unavailable.")
+      .catch(function() {
+        setError(true)
         setLoading(false)
       })
   }, [JSON.stringify(data?.slice(0, 5)), type, context])
-  // Re-fetches whenever data changes — satisfies "dynamically generated" rubric
 
-  if (!summary && !loading) return null
+  // Don't render anything if no data and not loading
+  if (!data || !data.length) return null
+  if (!summary && !loading && !error) return null
 
   return (
-    <div className="mt-4 p-3 bg-gray-900 border-l-4 border-blue-500 rounded">
-      <p className="text-xs text-blue-400 font-semibold mb-1 uppercase tracking-wide">
+    <div style={{
+      marginTop: "16px",
+      padding: "14px 16px",
+      background: "rgba(59,130,246,0.06)",
+      border: "1px solid rgba(59,130,246,0.2)",
+      borderLeft: "4px solid #3b82f6",
+      borderRadius: "8px",
+    }}>
+      <p style={{
+        fontSize: "10px",
+        fontWeight: "700",
+        color: "#60a5fa",
+        textTransform: "uppercase",
+        letterSpacing: "0.08em",
+        marginBottom: "8px",
+      }}>
         AI Summary
       </p>
-      {loading ? (
-        <p className="text-gray-400 text-sm animate-pulse">Generating summary...</p>
-      ) : (
-        <p className="text-gray-300 text-sm leading-relaxed">{summary}</p>
+
+      {loading && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+          {[100, 88, 72].map(function(w) {
+            return (
+              <div
+                key={w}
+                className="animate-pulse"
+                style={{
+                  height: "12px",
+                  width: w + "%",
+                  background: "#1f2937",
+                  borderRadius: "4px",
+                }}
+              />
+            )
+          })}
+        </div>
+      )}
+
+      {error && (
+        <p style={{ fontSize: "13px", color: "#6b7280", fontStyle: "italic" }}>
+          AI summary temporarily unavailable
+        </p>
+      )}
+
+      {!loading && !error && summary && (
+        <p style={{
+          fontSize: "13px",
+          color: "#d1d5db",
+          lineHeight: "1.6",
+          margin: 0,
+        }}>
+          {summary}
+        </p>
       )}
     </div>
   )
