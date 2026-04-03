@@ -9,46 +9,95 @@ const BLOC_LABELS = {
   mixed:        "Mixed",
 }
 
-function SidebarSkeleton() {
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "16px" }}>
-      {[1,2,3,4,5,6,7,8].map(function(i) {
-        return (
-          <div
-            key={i}
-            className="animate-pulse"
-            style={{
-              height: "28px", borderRadius: "6px",
-              background: "rgba(255,255,255,0.05)",
-              width: i % 3 === 0 ? "60%" : "100%",
-            }}
-          />
-        )
-      })}
-    </div>
-  )
-}
+const BLOC_ORDER = ["left_radical", "center_left", "right", "mixed"]
 
 export default function Sidebar({ filters, onChange }) {
   const { data, loading, error } = useApi("/api/subreddits")
 
-  const showWPWarning =
-    filters.subreddit === "worldpolitics" ||
-    filters.subreddit === "all"
+  const showWPWarning = filters.subreddit === "worldpolitics"
+
+  // Group subreddits by bloc outside JSX
+  const groups = {}
+  if (data) {
+    data.forEach(function(s) {
+      if (!groups[s.bloc]) groups[s.bloc] = []
+      groups[s.bloc].push(s)
+    })
+  }
+
+  function selectSubreddit(sub) {
+    onChange({ subreddit: sub, granularity: filters.granularity })
+  }
+
+  function selectGranularity(g) {
+    onChange({ subreddit: filters.subreddit, granularity: g })
+  }
+
+  function getSubBtnStyle(isActive) {
+    return {
+      width: "100%",
+      textAlign: "left",
+      padding: "6px 10px",
+      borderRadius: "6px",
+      fontSize: "12px",
+      marginBottom: "2px",
+      border: "none",
+      cursor: "pointer",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      background: isActive ? "rgba(255,255,255,0.1)" : "transparent",
+      color: isActive ? "white" : "#6b7280",
+      transition: "background 0.15s",
+    }
+  }
+
+  function getAllBtnStyle() {
+    const isActive = filters.subreddit === "all"
+    return {
+      width: "100%",
+      textAlign: "left",
+      padding: "6px 10px",
+      borderRadius: "6px",
+      fontSize: "13px",
+      marginBottom: "10px",
+      border: isActive ? "1px solid rgba(59,130,246,0.4)" : "1px solid transparent",
+      cursor: "pointer",
+      background: isActive ? "rgba(59,130,246,0.15)" : "rgba(255,255,255,0.03)",
+      color: isActive ? "#93c5fd" : "#9ca3af",
+    }
+  }
+
+  function getGranBtnStyle(g) {
+    const isActive = filters.granularity === g
+    return {
+      flex: 1,
+      padding: "5px 0",
+      borderRadius: "6px",
+      fontSize: "11px",
+      border: "none",
+      cursor: "pointer",
+      background: isActive ? "#1d4ed8" : "#1f2937",
+      color: isActive ? "white" : "#6b7280",
+    }
+  }
 
   return (
     <div style={{
       width: "260px",
+      minWidth: "260px",
       background: "#0a0f1a",
       borderRight: "1px solid rgba(255,255,255,0.07)",
       overflowY: "auto",
       flexShrink: 0,
       display: "flex",
       flexDirection: "column",
+      height: "100vh",
     }}>
-      {/* Logo area */}
+
+      {/* Logo */}
       <div style={{
-        padding: "20px 16px 12px",
+        padding: "20px 16px 14px",
         borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}>
         <h2 style={{
@@ -62,9 +111,9 @@ export default function Sidebar({ filters, onChange }) {
         </p>
       </div>
 
-      <div style={{ padding: "12px 16px", flex: 1 }}>
+      <div style={{ padding: "14px 16px", flex: 1, overflowY: "auto" }}>
 
-        {/* Filter label */}
+        {/* Section label */}
         <p style={{
           fontSize: "10px", color: "#4b5563",
           textTransform: "uppercase", letterSpacing: "0.07em",
@@ -73,8 +122,25 @@ export default function Sidebar({ filters, onChange }) {
           Filter by Subreddit
         </p>
 
-        {/* Loading skeleton */}
-        {loading && <SidebarSkeleton />}
+        {/* Loading */}
+        {loading && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            {[1,2,3,4,5,6,7].map(function(i) {
+              return (
+                <div
+                  key={i}
+                  className="animate-pulse"
+                  style={{
+                    height: "26px",
+                    borderRadius: "6px",
+                    background: "rgba(255,255,255,0.05)",
+                    width: i % 3 === 0 ? "55%" : "100%",
+                  }}
+                />
+              )
+            })}
+          </div>
+        )}
 
         {/* Error */}
         {error && !loading && (
@@ -83,87 +149,63 @@ export default function Sidebar({ filters, onChange }) {
           </p>
         )}
 
-        {/* Subreddit list */}
+        {/* Subreddit buttons */}
         {data && !loading && (
           <div>
-            {/* All subreddits button */}
+            {/* All subreddits */}
             <button
-              onClick={function() { onChange(Object.assign({}, filters, { subreddit: "all" })) }}
-              style={{
-                width: "100%", textAlign: "left",
-                padding: "6px 8px", borderRadius: "6px",
-                fontSize: "13px", marginBottom: "8px",
-                border: "none", cursor: "pointer",
-                background: filters.subreddit === "all"
-                  ? "rgba(59,130,246,0.15)"
-                  : "transparent",
-                color: filters.subreddit === "all" ? "#93c5fd" : "#9ca3af",
-              }}
+              style={getAllBtnStyle()}
+              onClick={function() { selectSubreddit("all") }}
             >
               All subreddits
             </button>
 
-            {/* Grouped by bloc */}
-            {(function() {
-              const groups = {}
-              data.forEach(function(s) {
-                if (!groups[s.bloc]) groups[s.bloc] = []
-                groups[s.bloc].push(s)
-              })
-              return Object.entries(groups).map(function(entry) {
-                const bloc = entry[0]
-                const subs = entry[1]
-                return (
-                  <div key={bloc} style={{ marginBottom: "12px" }}>
-                    <p style={{
-                      fontSize: "10px", fontWeight: "700",
-                      textTransform: "uppercase", letterSpacing: "0.06em",
-                      color: BLOC_COLORS[bloc] || "#6b7280",
-                      marginBottom: "4px", padding: "0 8px",
-                    }}>
-                      {BLOC_LABELS[bloc] || bloc}
-                    </p>
-                    {subs.map(function(s) {
-                      const isActive = filters.subreddit === s.subreddit
-                      return (
-                        <button
-                          key={s.subreddit}
-                          onClick={function() {
-                            onChange(Object.assign({}, filters, { subreddit: s.subreddit }))
-                          }}
-                          style={{
-                            width: "100%", textAlign: "left",
-                            padding: "5px 8px", borderRadius: "6px",
-                            fontSize: "12px", marginBottom: "2px",
-                            border: "none", cursor: "pointer",
-                            background: isActive
-                              ? "rgba(255,255,255,0.08)"
-                              : "transparent",
-                            color: isActive ? "white" : "#6b7280",
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                          }}
-                        >
-                          <span>{"r/" + s.subreddit}</span>
-                          <span style={{
-                            fontSize: "10px",
-                            color: isActive ? "#9ca3af" : "#374151",
-                          }}>
-                            {s.count}
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                )
-              })
-            })()}
+            {/* Each bloc group */}
+            {BLOC_ORDER.map(function(bloc) {
+              const subs = groups[bloc]
+              if (!subs || subs.length === 0) return null
+              return (
+                <div key={bloc} style={{ marginBottom: "14px" }}>
+                  {/* Bloc label */}
+                  <p style={{
+                    fontSize: "10px",
+                    fontWeight: "700",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.06em",
+                    color: BLOC_COLORS[bloc] || "#6b7280",
+                    marginBottom: "4px",
+                    paddingLeft: "10px",
+                  }}>
+                    {BLOC_LABELS[bloc] || bloc}
+                  </p>
+
+                  {/* Subreddit buttons in this bloc */}
+                  {subs.map(function(s) {
+                    const isActive = filters.subreddit === s.subreddit
+                    return (
+                      <button
+                        key={s.subreddit}
+                        style={getSubBtnStyle(isActive)}
+                        onClick={function() { selectSubreddit(s.subreddit) }}
+                      >
+                        <span>{"r/" + s.subreddit}</span>
+                        <span style={{
+                          fontSize: "10px",
+                          color: isActive ? "#9ca3af" : "#374151",
+                        }}>
+                          {s.count}
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              )
+            })}
           </div>
         )}
 
-        {/* Granularity toggle */}
-        <div style={{ marginTop: "8px", marginBottom: "12px" }}>
+        {/* Granularity */}
+        <div style={{ marginTop: "4px", marginBottom: "14px" }}>
           <p style={{
             fontSize: "10px", color: "#4b5563",
             textTransform: "uppercase", letterSpacing: "0.07em",
@@ -173,20 +215,11 @@ export default function Sidebar({ filters, onChange }) {
           </p>
           <div style={{ display: "flex", gap: "4px" }}>
             {["day", "week", "month"].map(function(g) {
-              const isActive = filters.granularity === g
               return (
                 <button
                   key={g}
-                  onClick={function() {
-                    onChange(Object.assign({}, filters, { granularity: g }))
-                  }}
-                  style={{
-                    flex: 1, padding: "5px 0",
-                    borderRadius: "6px", fontSize: "11px",
-                    border: "none", cursor: "pointer",
-                    background: isActive ? "#1d4ed8" : "#1f2937",
-                    color: isActive ? "white" : "#6b7280",
-                  }}
+                  style={getGranBtnStyle(g)}
+                  onClick={function() { selectGranularity(g) }}
                 >
                   {g}
                 </button>

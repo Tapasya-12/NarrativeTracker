@@ -2,6 +2,19 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import pandas as pd, numpy as np, faiss, json, os
 from dotenv import load_dotenv
+from functools import lru_cache
+import json
+from flask_compress import Compress 
+Compress(app)
+
+# Simple in-memory cache for expensive endpoints
+_cache = {}
+
+def get_cached(key, compute_fn):
+    """Return cached result or compute and cache it."""
+    if key not in _cache:
+        _cache[key] = compute_fn()
+    return _cache[key]
 
 load_dotenv()
 print("DEBUG KEY:", os.getenv("GROQ_API_KEY"))
@@ -149,19 +162,23 @@ def topdomain():
 # ── ENDPOINT 8: NETWORK ───────────────────────────────────────────────────────
 @app.route("/api/network")
 def network():
-    ntype = request.args.get("type","subreddit")
-    remove = request.args.get("remove_node",None)
-    if ntype=="subreddit": base = net_sub
-    elif ntype=="author": base = net_auth
-    else: base = net_src
+    ntype = request.args.get("type", "subreddit")
+    remove = request.args.get("remove_node", None)
+
+    if ntype == "subreddit":   base = net_sub
+    elif ntype == "author":    base = net_auth
+    else:                      base = net_src
+
     if remove:
+        # Node removal — never cache, always compute fresh
         data = {
-            "nodes": [n for n in base["nodes"] if n["id"]!=remove],
+            "nodes": [n for n in base["nodes"] if n["id"] != remove],
             "edges": [e for e in base["edges"]
-                      if e["source"]!=remove and e["target"]!=remove]
+                      if e["source"] != remove and e["target"] != remove]
         }
     else:
         data = base
+
     return jsonify(data)
 
 # ── ENDPOINT 9: SEMANTIC SEARCH ───────────────────────────────────────────────
@@ -194,20 +211,31 @@ def search():
 # ── ENDPOINT 10: CLUSTERS ─────────────────────────────────────────────────────
 @app.route("/api/clusters")
 def clusters():
-    k = int(request.args.get("k",8))
-    available = [5,8,12,20]
-    k_actual = min(available, key=lambda x: abs(x-k))
+    k = int(request.args.get("k", 8))
+    available = [5, 8, 12, 20]
+    k_actual = min(available, key=lambda x: abs(x - k))
     d = clust_data[str(k_actual)]
+
+    # Only send x, y, cluster, subreddit — skip full titles for speed
+    # Title only sent for tooltip on hover (already in the data)
+    points_slim = [
+        {
+            "x":         d["coords"][i][0],
+            "y":         d["coords"][i][1],
+            "cluster":   d["labels"][i],
+            "subreddit": d["subreddits"][i],
+            "title":     d["titles"][i][:80],  # truncate to 80 chars
+        }
+        for i in range(len(d["labels"]))
+    ]
+
     return jsonify({
-        "k_requested": k,
-        "k_actual": k_actual,
-        "cluster_count": d["cluster_count"],
-        "noise_count": d["noise_count"],
+        "k_requested":    k,
+        "k_actual":       k_actual,
+        "cluster_count":  d["cluster_count"],
+        "noise_count":    d["noise_count"],
         "cluster_labels": d["cluster_labels"],
-        "points": [{"x":d["coords"][i][0],"y":d["coords"][i][1],
-                    "cluster":d["labels"][i],"title":d["titles"][i],
-                    "subreddit":d["subreddits"][i]}
-                   for i in range(len(d["labels"]))]
+        "points":         points_slim,
     })
 
 # ── ENDPOINT 11: NARRATIVE DIVERGENCE ─────────────────────────────────────────
@@ -343,4 +371,4 @@ def source_network():
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000, threaded=True)
