@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, memo } from "react"
 import { ScatterChart, Scatter, XAxis, YAxis, Tooltip, Cell } from "recharts"
 import { useApi } from "../hooks/useApi"
 
@@ -14,7 +14,6 @@ function getClusterColor(clusterId) {
   return CLUSTER_COLORS[(clusterId + 1) % CLUSTER_COLORS.length]
 }
 
-// ── Scatter tooltip ───────────────────────────────────────────────────────────
 function ScatterTooltip({ active, payload }) {
   if (!active || !payload || !payload.length) return null
   const d = payload[0].payload
@@ -41,8 +40,7 @@ function ScatterTooltip({ active, payload }) {
       {d.cluster !== -1 && (
         <p style={{
           fontSize: "10px", fontWeight: "600",
-          color: getClusterColor(d.cluster),
-          marginTop: "3px",
+          color: getClusterColor(d.cluster), marginTop: "3px",
         }}>
           {"Cluster " + d.cluster}
         </p>
@@ -56,8 +54,7 @@ function ScatterTooltip({ active, payload }) {
   )
 }
 
-// ── Cluster keyword card ──────────────────────────────────────────────────────
-function ClusterCard({ clusterId, terms }) {
+const ClusterCard = memo(function ClusterCard({ clusterId, terms }) {
   const color = getClusterColor(Number(clusterId))
   return (
     <div style={{
@@ -98,10 +95,10 @@ function ClusterCard({ clusterId, terms }) {
       </div>
     </div>
   )
-}
+})
 
-// ── Main component ────────────────────────────────────────────────────────────
-export default function ClusterView() {
+// ClusterView receives no props from App filters — safe to memo
+function ClusterView() {
   const [k, setK] = useState(8)
 
   const chartContainerRef = useRef(null)
@@ -130,7 +127,7 @@ export default function ClusterView() {
   return (
     <section style={{ width: "100%" }}>
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div style={{ marginBottom: "22px" }}>
         <div style={{
           display: "flex", alignItems: "flex-start",
@@ -145,7 +142,6 @@ export default function ClusterView() {
             </p>
           </div>
 
-          {/* k slider */}
           <div style={{
             display: "flex", alignItems: "center", gap: "12px",
             padding: "10px 16px",
@@ -169,8 +165,7 @@ export default function ClusterView() {
             <span className="mono" style={{
               fontSize: "18px", fontWeight: "700",
               color: "var(--blue, #4f8ef7)",
-              minWidth: "28px", textAlign: "center",
-              lineHeight: 1,
+              minWidth: "28px", textAlign: "center", lineHeight: 1,
             }}>
               {k}
             </span>
@@ -178,16 +173,16 @@ export default function ClusterView() {
         </div>
       </div>
 
-      {/* ── Stats strip ── */}
+      {/* Stats strip */}
       {data && !loading && (
         <div style={{
           display: "flex", gap: "10px",
           flexWrap: "wrap", marginBottom: "16px",
         }}>
           {[
-            { label: "Clusters Found", value: data.cluster_count, color: "var(--blue, #4f8ef7)"   },
-            { label: "Noise Points",   value: data.noise_count,   color: "var(--text-dim)"         },
-            { label: "Total Posts",    value: allPoints.length,   color: "var(--text-primary)"     },
+            { label: "Clusters Found", value: data.cluster_count, color: "var(--blue, #4f8ef7)" },
+            { label: "Noise Points",   value: data.noise_count,   color: "var(--text-dim)"       },
+            { label: "Total Posts",    value: allPoints.length,   color: "var(--text-primary)"   },
           ].map(function(item) {
             return (
               <div key={item.label} style={{
@@ -224,20 +219,17 @@ export default function ClusterView() {
               border: "1px solid rgba(251,191,36,0.15)",
               borderRadius: "999px",
             }}>
-              {"Showing k=" + data.k_actual +
-               " — nearest to " + data.k_requested}
+              {"Showing k=" + data.k_actual + " — nearest to " + data.k_requested}
             </div>
           )}
         </div>
       )}
 
-      {/* ── Loading ── */}
       {loading && (
         <div className="skeleton"
           style={{ height: "400px", borderRadius: "var(--r-md, 10px)" }} />
       )}
 
-      {/* ── Error ── */}
       {error && !loading && (
         <div style={{
           padding: "14px 16px",
@@ -252,7 +244,7 @@ export default function ClusterView() {
         </div>
       )}
 
-      {/* ── Scatter chart ── */}
+      {/* Scatter chart */}
       {data && !loading && allPoints.length > 0 && (
         <div
           ref={chartContainerRef}
@@ -281,16 +273,14 @@ export default function ClusterView() {
             </Scatter>
             <Scatter data={clustered} name="clusters">
               {clustered.map(function(p, i) {
-                return (
-                  <Cell key={i} fill={getClusterColor(p.cluster)} opacity={0.8} />
-                )
+                return <Cell key={i} fill={getClusterColor(p.cluster)} opacity={0.8} />
               })}
             </Scatter>
           </ScatterChart>
         </div>
       )}
 
-      {/* ── Cluster keyword cards ── */}
+      {/* Cluster keyword cards */}
       {labelEntries.length > 0 && !loading && (
         <div style={{ marginBottom: "20px" }}>
           <p style={{
@@ -315,7 +305,7 @@ export default function ClusterView() {
         </div>
       )}
 
-      {/* ── Nomic Atlas ── */}
+      {/* Nomic Atlas */}
       <div style={{
         display: "flex", alignItems: "center",
         justifyContent: "space-between",
@@ -349,7 +339,6 @@ export default function ClusterView() {
             8,309 post embeddings uploaded. Explore topic neighborhoods,
             semantic clusters, and ideological groupings interactively.
           </p>
-
           <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
             {[
               { text: "8,309 embeddings uploaded", color: "var(--green, #34d399)" },
@@ -362,8 +351,7 @@ export default function ClusterView() {
                   color: tag.color,
                   background: tag.color + "15",
                   border: "1px solid " + tag.color + "25",
-                  borderRadius: "999px",
-                  padding: "3px 9px",
+                  borderRadius: "999px", padding: "3px 9px",
                 }}>
                   {tag.text}
                 </span>
@@ -397,3 +385,6 @@ export default function ClusterView() {
     </section>
   )
 }
+
+// memo — ClusterView takes no filters prop, never needs to re-render on sidebar changes
+export default memo(ClusterView)

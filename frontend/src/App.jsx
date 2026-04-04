@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense } from "react"
+import { useState, lazy, Suspense, memo, useMemo } from "react"
 import Sidebar from "./components/Sidebar"
 import StatBar from "./components/StatBar"
 import NarrativeDivergence from "./components/NarrativeDivergence"
@@ -13,6 +13,11 @@ const NetworkGraph = lazy(function() {
 
 const ClusterView = lazy(function() {
   return import("./components/ClusterView")
+})
+
+// Memoized wrapper — ClusterView never needs to re-render on sidebar change
+const StableClusterView = memo(function() {
+  return <ClusterView />
 })
 
 export const BLOC_COLORS = {
@@ -223,7 +228,7 @@ export default function App() {
         >
           <Suspense fallback={<SectionSkeleton title="Topic Clusters" height="440px" />}>
             <div className="section fade-up">
-              <ClusterView />
+              <StableClusterView />
             </div>
           </Suspense>
         </LazySection>

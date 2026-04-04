@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from "react"
+import { useState, useCallback, useEffect, useRef, useMemo, memo } from "react"
 import { useApi } from "../hooks/useApi"
 import { BLOC_COLORS } from "../App"
 import ForceGraph2D from "react-force-graph-2d"
@@ -75,7 +75,7 @@ function ctrlBtn(isActive, activeColor) {
 }
 
 // ── Bias summary cards ────────────────────────────────────────────────────────
-function BiasSummaryCards({ edges }) {
+const BiasSummaryCards = memo(function BiasSummaryCards({ edges }) {
   const byCommunity = {}
   edges.forEach(function(e) {
     const bloc = getSubBloc(e.source)
@@ -155,10 +155,10 @@ function BiasSummaryCards({ edges }) {
       })}
     </div>
   )
-}
+})
 
 // ── Bias edge row ─────────────────────────────────────────────────────────────
-function BiasEdgeRow({ edge }) {
+const BiasEdgeRow = memo(function BiasEdgeRow({ edge }) {
   const bias      = getDomainBias(edge.target)
   const biasColor = BIAS_COLORS[bias]
   const subColor  = BLOC_COLORS[getSubBloc(edge.source)] || "#6b7280"
@@ -206,7 +206,7 @@ function BiasEdgeRow({ edge }) {
       </span>
     </div>
   )
-}
+})
 
 // ── Source Bias tab ───────────────────────────────────────────────────────────
 function SourceBiasTab({ sourceData }) {
@@ -440,12 +440,13 @@ function SourceBiasTab({ sourceData }) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function NetworkGraph({ filters }) {
+function NetworkGraph({ filters }) {
   const [netType,    setNetType]    = useState("subreddit")
   const [removeNode, setRemoveNode] = useState(null)
   const [selected,   setSelected]   = useState(null)
   const [dimensions, setDimensions] = useState({ w: 900, h: 420 })
-  const containerRef = useRef(null)
+  const containerRef    = useRef(null)
+  const autoSelectedRef = useRef(null)  // tracks which sub we already auto-selected
 
   const isBiasTab = netType === "bias"
 
@@ -480,6 +481,7 @@ export default function NetworkGraph({ filters }) {
   useEffect(function() {
     setSelected(null)
     setRemoveNode(null)
+    autoSelectedRef.current = null
   }, [netType])
 
   // ── Derive sidebar values ─────────────────────────────────────────────────
@@ -490,28 +492,36 @@ export default function NetworkGraph({ filters }) {
     ? (BLOC_COLORS[SUB_BLOC_MAP[sidebarSub] || "other"] || "#4f8ef7")
     : null
 
-  // ── KEY FIX: use a ref for sidebarSub inside nodePainter ─────────────────
-  // Without this, every sidebar click recreates nodePainter,
-  // which makes ForceGraph2D fully re-render and re-simulate.
+  // ── Ref so nodePainter never recreates on sidebar change ─────────────────
   const sidebarSubRef = useRef(sidebarSub)
   useEffect(function() {
     sidebarSubRef.current = sidebarSub
   }, [sidebarSub])
 
-  // ── Auto-select matching node when sidebar subreddit changes ──────────────
+  // ── Auto-select: only fires when sidebarSub changes, not when data reloads
   useEffect(function() {
     if (netType !== "subreddit") return
-    if (!sidebarSub) return
+    if (!sidebarSub) {
+      autoSelectedRef.current = null
+      return
+    }
+    // Already selected this subreddit — skip to avoid re-render cascade
+    if (autoSelectedRef.current === sidebarSub) return
     if (!data || !data.nodes) return
-    var match = data.nodes.find(function(n) { return n.id === sidebarSub })
-    if (match) setSelected(match)
-  }, [sidebarSub, data, netType])
 
-  const topNode = data && data.nodes
-    ? data.nodes.reduce(function(top, n) {
-        return (n.pagerank || 0) > (top ? top.pagerank || 0 : 0) ? n : top
-      }, null)
-    : null
+    var match = data.nodes.find(function(n) { return n.id === sidebarSub })
+    if (match) {
+      setSelected(match)
+      autoSelectedRef.current = sidebarSub
+    }
+  }, [sidebarSub, netType, data])
+
+  const topNode = useMemo(function() {
+    if (!data || !data.nodes) return null
+    return data.nodes.reduce(function(top, n) {
+      return (n.pagerank || 0) > (top ? top.pagerank || 0 : 0) ? n : top
+    }, null)
+  }, [data])
 
   const nodeColor = useCallback(function(node) {
     if (netType === "source") {
@@ -526,7 +536,7 @@ export default function NetworkGraph({ filters }) {
     return Math.max(2, Math.min(20, (node.pagerank || 0) * 8000 + 3))
   }, [])
 
-  // ── nodePainter — NO sidebarSub in deps, reads ref instead ───────────────
+  // nodePainter reads sidebarSub from ref — never recreated on sidebar change
   const nodePainter = useCallback(function(node, ctx, globalScale) {
     const size  = Math.max(2, Math.min(20, (node.pagerank || 0) * 8000 + 3))
     const color = nodeColor(node)
@@ -542,7 +552,6 @@ export default function NetworkGraph({ filters }) {
       ctx.stroke()
     }
 
-    // Read sidebarSub from ref — no re-creation of painter on sidebar change
     if (sidebarSubRef.current && node.id === sidebarSubRef.current) {
       ctx.beginPath()
       ctx.arc(node.x, node.y, size + 5 / globalScale, 0, 2 * Math.PI)
@@ -559,16 +568,18 @@ export default function NetworkGraph({ filters }) {
       ctx.textAlign = "center"
       ctx.fillText(node.id, node.x, node.y + size + 8 / globalScale)
     }
-  }, [nodeColor])  // sidebarSub intentionally excluded — uses ref
+  }, [nodeColor])  // sidebarSub excluded intentionally — uses ref
 
-  const graphData = data
-    ? {
-        nodes: data.nodes.map(function(n) { return Object.assign({}, n) }),
-        links: data.edges.map(function(e) {
-          return Object.assign({}, e, { source: e.source, target: e.target })
-        }),
-      }
-    : { nodes: [], links: [] }
+  // graphData memoized — only rebuilds when data changes, not on every render
+  const graphData = useMemo(function() {
+    if (!data) return { nodes: [], links: [] }
+    return {
+      nodes: data.nodes.map(function(n) { return Object.assign({}, n) }),
+      links: data.edges.map(function(e) {
+        return Object.assign({}, e, { source: e.source, target: e.target })
+      }),
+    }
+  }, [data])
 
   return (
     <section style={{ width: "100%" }}>
@@ -596,7 +607,6 @@ export default function NetworkGraph({ filters }) {
             )}
           </div>
 
-          {/* Tabs */}
           <div style={{
             display: "flex", flexWrap: "wrap",
             gap: "4px", alignItems: "center",
@@ -677,7 +687,10 @@ export default function NetworkGraph({ filters }) {
             · node auto-selected and highlighted
           </span>
           <button
-            onClick={function() { setSelected(null) }}
+            onClick={function() {
+              setSelected(null)
+              autoSelectedRef.current = null
+            }}
             style={{
               marginLeft: "auto", background: "none", border: "none",
               color: "var(--text-dim)", cursor: "pointer",
@@ -753,7 +766,6 @@ export default function NetworkGraph({ filters }) {
             </div>
           )}
 
-          {/* Force graph */}
           {!loading && !error && data && data.nodes && data.nodes.length > 0 && (
             <div ref={containerRef} style={{
               background: "var(--bg-base, #02060f)",
@@ -793,7 +805,7 @@ export default function NetworkGraph({ filters }) {
             </div>
           )}
 
-          {/* ── Selected node panel — improved UI ── */}
+          {/* Selected node panel */}
           {selected && !loading && (
             <div style={{
               marginTop: "14px",
@@ -809,8 +821,6 @@ export default function NetworkGraph({ filters }) {
               borderRadius: "var(--r-md)",
               overflow: "hidden",
             }}>
-
-              {/* Panel header */}
               <div style={{
                 display: "flex", justifyContent: "space-between",
                 alignItems: "center",
@@ -824,7 +834,6 @@ export default function NetworkGraph({ filters }) {
                   display: "flex", alignItems: "center",
                   gap: "10px", flexWrap: "wrap",
                 }}>
-                  {/* Glowing dot */}
                   <div style={{
                     width: "12px", height: "12px",
                     borderRadius: "50%",
@@ -833,49 +842,36 @@ export default function NetworkGraph({ filters }) {
                       (BLOC_COLORS[selected.bloc] || "#6b7280") + "80",
                     flexShrink: 0,
                   }} />
-
-                  {/* Name with r/ prefix */}
                   <p style={{
                     fontSize: "15px", fontWeight: "700",
                     color: "var(--text-primary)", letterSpacing: "-0.3px",
                   }}>
                     {"r/" + selected.id}
                   </p>
-
-                  {/* Sidebar badge */}
                   {sidebarSub && selected.id === sidebarSub && (
                     <span style={{
                       fontSize: "9px", fontWeight: "700",
-                      color: "white",
-                      background: sidebarBlocColor,
-                      borderRadius: "999px",
-                      padding: "2px 9px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.07em",
+                      color: "white", background: sidebarBlocColor,
+                      borderRadius: "999px", padding: "2px 9px",
+                      textTransform: "uppercase", letterSpacing: "0.07em",
                       boxShadow: "0 0 8px " + sidebarBlocColor + "60",
                     }}>
                       Sidebar selection
                     </span>
                   )}
-
-                  {/* Bridge badge */}
                   {selected.is_bridge && (
                     <span style={{
                       fontSize: "9px", fontWeight: "700",
                       color: "#fbbf24",
                       background: "rgba(251,191,36,0.12)",
                       border: "1px solid rgba(251,191,36,0.25)",
-                      borderRadius: "999px",
-                      padding: "2px 9px",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.07em",
+                      borderRadius: "999px", padding: "2px 9px",
+                      textTransform: "uppercase", letterSpacing: "0.07em",
                     }}>
                       Bridge Author
                     </span>
                   )}
                 </div>
-
-                {/* Close button */}
                 <button
                   onClick={function() { setSelected(null) }}
                   style={{
@@ -899,7 +895,6 @@ export default function NetworkGraph({ filters }) {
                 </button>
               </div>
 
-              {/* Stat cells */}
               <div style={{
                 display: "grid",
                 gridTemplateColumns: "repeat(4, 1fr)",
@@ -908,49 +903,36 @@ export default function NetworkGraph({ filters }) {
                   selected.pagerank != null && {
                     label: "PageRank",
                     value: selected.pagerank.toFixed(6),
-                    mono: true,
-                    color: "var(--blue, #4f8ef7)",
+                    mono: true, color: "var(--blue, #4f8ef7)",
                   },
                   selected.post_count != null && {
                     label: "Total Posts",
                     value: selected.post_count.toLocaleString(),
-                    mono: true,
-                    color: null,
+                    mono: true, color: null,
                   },
                   selected.bloc && {
                     label: "Ideological Bloc",
                     value: selected.bloc.replace("_", " "),
-                    mono: false,
-                    color: BLOC_COLORS[selected.bloc],
+                    mono: false, color: BLOC_COLORS[selected.bloc],
                   },
                   selected.community != null && {
                     label: "Louvain Community",
                     value: "#" + String(selected.community),
-                    mono: true,
-                    color: null,
-                  },
-                  selected.subreddits && selected.subreddits.length > 0 && {
-                    label: "Active In",
-                    value: selected.subreddits
-                      .map(function(s) { return "r/" + s }).join(", "),
-                    mono: false,
-                    color: null,
+                    mono: true, color: null,
                   },
                 ].filter(Boolean).map(function(item, idx, arr) {
                   return (
                     <div key={item.label} style={{
                       padding: "14px 18px",
                       background: idx % 2 === 0
-                        ? "var(--bg-card)"
-                        : "rgba(255,255,255,0.015)",
+                        ? "var(--bg-card)" : "rgba(255,255,255,0.015)",
                       borderRight: idx < arr.length - 1
                         ? "1px solid var(--border)" : "none",
                     }}>
                       <p style={{
                         fontSize: "9px", fontWeight: "700",
                         color: "var(--text-dim)",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.12em",
+                        textTransform: "uppercase", letterSpacing: "0.12em",
                         marginBottom: "6px",
                       }}>
                         {item.label}
@@ -1000,7 +982,9 @@ export default function NetworkGraph({ filters }) {
           )}
         </div>
       )}
-
     </section>
   )
 }
+
+// Wrap with memo — prevents re-render when other sidebar-driven components update
+export default memo(NetworkGraph)
