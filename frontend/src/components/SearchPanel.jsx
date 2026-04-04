@@ -30,9 +30,22 @@ const BLOC_FILTERS = [
   { key: "mixed",        label: "Mixed"        },
 ]
 
-const PAGE_SIZE = 10
+// Sidebar subreddit → ideological bloc
+const SUBREDDIT_TO_BLOC = {
+  Anarchism:           "left_radical",
+  socialism:           "left_radical",
+  Liberal:             "center_left",
+  democrats:           "center_left",
+  politics:            "center_left",
+  neoliberal:          "center_left",
+  PoliticalDiscussion: "center_left",
+  Conservative:        "right",
+  Republican:          "right",
+  worldpolitics:       "mixed",
+}
 
-// ── Style helpers ─────────────────────────────────────────────────────────────
+const PAGE_SIZE = 15
+
 function getSimColor(score) {
   if (score >= 0.7) return "#34d399"
   if (score >= 0.5) return "#fbbf24"
@@ -49,8 +62,7 @@ function getFilterBtnStyle(isActive, blocKey) {
       fontSize: "11px", fontWeight: "500",
       border: "none", cursor: "pointer",
       background: bg, color: "white",
-      transition: "all 0.15s",
-      fontFamily: "inherit",
+      transition: "all 0.15s", fontFamily: "inherit",
     }
   }
   return {
@@ -60,19 +72,18 @@ function getFilterBtnStyle(isActive, blocKey) {
     cursor: "pointer",
     background: "rgba(255,255,255,0.03)",
     color: "var(--text-sec)",
-    transition: "all 0.15s",
-    fontFamily: "inherit",
+    transition: "all 0.15s", fontFamily: "inherit",
   }
 }
 
 // ── Result card ───────────────────────────────────────────────────────────────
 function ResultCard({ result, index }) {
-  const bloc  = result.ideological_bloc
-  const color = BLOC_COLORS[bloc] || "#6b7280"
-  const sim   = Math.round((result.similarity || 0) * 100)
+  const bloc     = result.ideological_bloc
+  const color    = BLOC_COLORS[bloc] || "#6b7280"
+  const sim      = Math.round((result.similarity || 0) * 100)
   const simColor = getSimColor(result.similarity || 0)
-  const date  = result.created_utc ? result.created_utc.slice(0, 10) : ""
-  const href  = "https://reddit.com" + (result.permalink || "")
+  const date     = result.created_utc ? result.created_utc.slice(0, 10) : ""
+  const href     = "https://reddit.com" + (result.permalink || "")
 
   return (
     <a
@@ -82,7 +93,6 @@ function ResultCard({ result, index }) {
       className="sp-card"
       style={{ display: "flex", gap: "12px", textDecoration: "none", marginBottom: "6px" }}
     >
-      {/* Rank */}
       <span className="mono" style={{
         width: "22px", height: "22px",
         borderRadius: "50%",
@@ -97,7 +107,6 @@ function ResultCard({ result, index }) {
       </span>
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        {/* Title */}
         <p style={{
           fontSize: "13px",
           color: "var(--text-primary)",
@@ -112,7 +121,6 @@ function ResultCard({ result, index }) {
           {result.title}
         </p>
 
-        {/* Meta */}
         <div style={{
           display: "flex", flexWrap: "wrap",
           alignItems: "center", gap: "6px",
@@ -141,7 +149,6 @@ function ResultCard({ result, index }) {
             </span>
           )}
 
-          {/* Similarity badge */}
           <span style={{
             marginLeft: "auto",
             fontSize: "10px", fontWeight: "700",
@@ -174,7 +181,7 @@ function SuggestionChip({ text, onClick }) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function SearchPanel() {
+export default function SearchPanel({ filters }) {
   const [query,        setQuery]        = useState("")
   const [results,      setResults]      = useState(null)
   const [suggestions,  setSuggestions]  = useState([])
@@ -187,20 +194,29 @@ export default function SearchPanel() {
   const [pageSize,     setPageSize]     = useState(PAGE_SIZE)
   const inputRef = useRef(null)
 
+  // ── Derive sidebar bloc context ─────────────────────────────────────────────
+  const sidebarBloc = filters && filters.subreddit !== "all"
+    ? (SUBREDDIT_TO_BLOC[filters.subreddit] || "all")
+    : "all"
+
+  // User's manual pill selection takes priority.
+  // If user hasn't manually picked a filter, use sidebar context.
+  const activeBloc = blocFilter !== "all" ? blocFilter : sidebarBloc
+
+  const isSidebarControlling = blocFilter === "all" && sidebarBloc !== "all"
+
   const doSearch = async function(q) {
     const trimmed = (q || "").trim()
-
     if (!trimmed || trimmed.length < 2) {
       setResults({ results: [], total: 0, query: trimmed, warning: true })
       return
     }
-
     setLoading(true)
     setError(null)
     setResults(null)
     setSuggestions([])
     setLastQuery(trimmed)
-    setBlocFilter("all")
+    setBlocFilter("all")  // reset manual filter on new search
     setPageSize(PAGE_SIZE)
 
     try {
@@ -236,9 +252,12 @@ export default function SearchPanel() {
   }
 
   const allResults = (results && results.results) ? results.results : []
-  const filtered   = blocFilter === "all"
+
+  // Apply active bloc filter (either from sidebar or manual pill)
+  const filtered  = activeBloc === "all"
     ? allResults
-    : allResults.filter(function(r) { return r.ideological_bloc === blocFilter })
+    : allResults.filter(function(r) { return r.ideological_bloc === activeBloc })
+
   const displayed  = filtered.slice(0, pageSize)
   const remaining  = filtered.length - pageSize
   const hasMore    = remaining > 0
@@ -253,9 +272,7 @@ export default function SearchPanel() {
           border-radius: 8px;
           transition: background 0.15s;
         }
-        .sp-card:hover {
-          background: rgba(255,255,255,0.055);
-        }
+        .sp-card:hover { background: rgba(255,255,255,0.055); }
         .sp-sugg-chip {
           padding: 5px 13px;
           border-radius: 999px;
@@ -297,12 +314,73 @@ export default function SearchPanel() {
 
       {/* ── Header ── */}
       <div style={{ marginBottom: "22px" }}>
+        <p className="sec-label">Core Feature</p>
         <p className="sec-title">Semantic Search</p>
         <p className="sec-desc">
           Search by meaning — works across languages and with zero keyword overlap.
           Powered by all-MiniLM-L6-v2 + FAISS IndexFlatIP.
         </p>
       </div>
+
+      {/* ── Sidebar context banner — shown when sidebar is filtering ── */}
+      {sidebarBloc !== "all" && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: "8px",
+          padding: "8px 14px",
+          background: (BLOC_COLORS[sidebarBloc] || "var(--blue)") + "08",
+          border: "1px solid " + (BLOC_COLORS[sidebarBloc] || "var(--blue)") + "25",
+          borderLeft: "3px solid " + (BLOC_COLORS[sidebarBloc] || "var(--blue)"),
+          borderRadius: "var(--r-sm)",
+          marginBottom: "14px",
+          fontSize: "11px",
+        }}>
+          <span style={{ color: "var(--text-dim)" }}>
+            Sidebar context:
+          </span>
+          <span style={{
+            color: BLOC_COLORS[sidebarBloc] || "var(--blue)",
+            fontWeight: "600",
+          }}>
+            {"r/" + filters.subreddit}
+          </span>
+          <span style={{ color: "var(--text-dim)" }}>
+            {"→ " + sidebarBloc.replace("_", " ") + " bloc"}
+          </span>
+          {isSidebarControlling && results && allResults.length > 0 && (
+            <span style={{
+              marginLeft: "4px",
+              fontSize: "10px",
+              color: BLOC_COLORS[sidebarBloc] || "var(--blue)",
+            }}>
+              · filtering results
+            </span>
+          )}
+          {isSidebarControlling && (
+            <button
+              onClick={function() {
+                setBlocFilter("left_radical") // force "all" by cycling
+                setTimeout(function() { setBlocFilter("all") }, 0)
+              }}
+              style={{
+                marginLeft: "auto",
+                background: "none", border: "none",
+                color: "var(--text-dim)", cursor: "pointer",
+                fontSize: "11px", fontFamily: "inherit",
+                padding: "0 2px",
+                transition: "color 0.15s",
+              }}
+              onMouseEnter={function(e) {
+                e.currentTarget.style.color = "var(--text-primary)"
+              }}
+              onMouseLeave={function(e) {
+                e.currentTarget.style.color = "var(--text-dim)"
+              }}
+            >
+              show all ×
+            </button>
+          )}
+        </div>
+      )}
 
       {/* ── Search input ── */}
       <div style={{ display: "flex", gap: "10px", marginBottom: "14px" }}>
@@ -326,9 +404,7 @@ export default function SearchPanel() {
 
       {/* ── Short query warning ── */}
       {query.length > 0 && query.trim().length < 2 && (
-        <p style={{
-          fontSize: "11px", color: "#fbbf24", marginBottom: "12px",
-        }}>
+        <p style={{ fontSize: "11px", color: "#fbbf24", marginBottom: "12px" }}>
           Please enter at least 2 characters
         </p>
       )}
@@ -343,8 +419,12 @@ export default function SearchPanel() {
             cursor: "pointer", fontFamily: "inherit",
             padding: 0, transition: "color 0.15s",
           }}
-          onMouseEnter={function(e) { e.currentTarget.style.color = "var(--text-sec)" }}
-          onMouseLeave={function(e) { e.currentTarget.style.color = "var(--text-dim)" }}
+          onMouseEnter={function(e) {
+            e.currentTarget.style.color = "var(--text-sec)"
+          }}
+          onMouseLeave={function(e) {
+            e.currentTarget.style.color = "var(--text-dim)"
+          }}
         >
           {(showExamples ? "▲ Hide" : "▼ Show") +
            " semantic search examples (zero keyword overlap)"}
@@ -364,10 +444,8 @@ export default function SearchPanel() {
                   display: "flex", alignItems: "flex-start",
                   gap: "12px", padding: "12px 14px",
                   borderBottom: i < SEMANTIC_EXAMPLES.length - 1
-                    ? "1px solid var(--border)"
-                    : "none",
+                    ? "1px solid var(--border)" : "none",
                 }}>
-                  {/* Lang badge */}
                   <span style={{
                     padding: "2px 7px", borderRadius: "4px",
                     fontSize: "10px", fontWeight: "700",
@@ -382,7 +460,6 @@ export default function SearchPanel() {
                   }}>
                     {ex.lang}
                   </span>
-
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <button
                       onClick={function() { setQuery(ex.query); doSearch(ex.query) }}
@@ -394,8 +471,12 @@ export default function SearchPanel() {
                         lineHeight: "1.5", wordBreak: "break-word",
                         transition: "color 0.15s",
                       }}
-                      onMouseEnter={function(e) { e.currentTarget.style.color = "#93bbfd" }}
-                      onMouseLeave={function(e) { e.currentTarget.style.color = "#4f8ef7" }}
+                      onMouseEnter={function(e) {
+                        e.currentTarget.style.color = "#93bbfd"
+                      }}
+                      onMouseLeave={function(e) {
+                        e.currentTarget.style.color = "#4f8ef7"
+                      }}
                     >
                       {'"' + ex.query + '"'}
                     </button>
@@ -433,11 +514,8 @@ export default function SearchPanel() {
         <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
           {[1,2,3,4,5].map(function(i) {
             return (
-              <div
-                key={i}
-                className="skeleton"
-                style={{ height: "68px", borderRadius: "8px" }}
-              />
+              <div key={i} className="skeleton"
+                style={{ height: "68px", borderRadius: "8px" }} />
             )
           })}
         </div>
@@ -446,7 +524,6 @@ export default function SearchPanel() {
       {/* ── Results ── */}
       {results && !loading && (
         <div>
-
           {/* Count + bloc filters row */}
           <div style={{
             display: "flex", alignItems: "center",
@@ -454,7 +531,6 @@ export default function SearchPanel() {
             flexWrap: "wrap", gap: "10px",
             marginBottom: "16px",
           }}>
-            {/* Count */}
             <p style={{ fontSize: "11px", color: "var(--text-sec)" }}>
               {results.warning && (
                 <span style={{ color: "#fbbf24" }}>
@@ -474,9 +550,15 @@ export default function SearchPanel() {
                   <span className="mono" style={{
                     color: "var(--text-primary)", fontWeight: "600",
                   }}>
-                    {results.total}
+                    {isSidebarControlling
+                      ? filtered.length + " of " + results.total
+                      : results.total
+                    }
                   </span>
-                  {" results for "}
+                  {isSidebarControlling
+                    ? " results in " + sidebarBloc.replace("_", " ") + " for "
+                    : " results for "
+                  }
                   <span style={{ color: "var(--text-primary)" }}>
                     {'"' + lastQuery + '"'}
                   </span>
@@ -493,14 +575,25 @@ export default function SearchPanel() {
                     : allResults.filter(function(r) {
                         return r.ideological_bloc === f.key
                       }).length
+
+                  // Highlight pill that matches sidebar bloc if no manual filter
+                  const isActive = blocFilter === f.key ||
+                    (blocFilter === "all" && f.key === sidebarBloc &&
+                     sidebarBloc !== "all")
+
                   return (
                     <button
                       key={f.key}
                       onClick={function() {
-                        setBlocFilter(f.key)
+                        // If clicking the currently sidebar-active pill, clear manual
+                        if (f.key === sidebarBloc && blocFilter === "all") {
+                          setBlocFilter("all")
+                        } else {
+                          setBlocFilter(f.key)
+                        }
                         setPageSize(PAGE_SIZE)
                       }}
-                      style={getFilterBtnStyle(blocFilter === f.key, f.key)}
+                      style={getFilterBtnStyle(isActive, f.key)}
                     >
                       {f.label + " " + cnt}
                     </button>
@@ -527,17 +620,31 @@ export default function SearchPanel() {
             </div>
           )}
 
-          {/* Bloc filter returned zero */}
+          {/* Filtered returns zero */}
           {results.total > 0 && filtered.length === 0 && (
             <div style={{
               padding: "32px 24px", textAlign: "center",
               background: "var(--bg-card)",
               border: "1px solid var(--border)",
               borderRadius: "10px",
+              marginBottom: "10px",
             }}>
-              <p style={{ fontSize: "13px", color: "var(--text-sec)" }}>
+              <p style={{
+                fontSize: "13px", color: "var(--text-sec)", marginBottom: "6px",
+              }}>
                 No results from this community for that query
               </p>
+              <button
+                onClick={function() { setBlocFilter("all") }}
+                style={{
+                  background: "none", border: "none",
+                  color: "var(--blue, #4f8ef7)",
+                  fontSize: "12px", cursor: "pointer",
+                  fontFamily: "inherit",
+                }}
+              >
+                Show all communities →
+              </button>
             </div>
           )}
 
@@ -598,7 +705,6 @@ export default function SearchPanel() {
               }}>
                 Explore related topics
               </p>
-
               {loadingSugg ? (
                 <div style={{ display: "flex", gap: "8px" }}>
                   {[1,2,3].map(function(i) {

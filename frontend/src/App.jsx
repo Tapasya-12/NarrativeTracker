@@ -30,7 +30,6 @@ const BLOCS = [
   { label: "Mixed",        color: "#c084fc", tag: "r/worldpolitics"                       },
 ]
 
-// ── Skeleton fallbacks ────────────────────────────────────────────────────────
 function SectionSkeleton({ title, height }) {
   return (
     <div className="section">
@@ -45,9 +44,8 @@ function SectionSkeleton({ title, height }) {
   )
 }
 
-// ── LazySection — only mounts children when scrolled near ────────────────────
 function LazySection({ children, fallback }) {
-  var result = useVisible("350px")
+  var result  = useVisible("350px")
   var ref     = result[0]
   var visible = result[1]
 
@@ -181,12 +179,12 @@ export default function App() {
           </div>
         </div>
 
-        {/* ── Stats — always visible, loads immediately ── */}
+        {/* ── Stats — always visible ── */}
         <StatBar />
 
-        {/* ── Narrative Divergence — always visible ── */}
+        {/* ── Narrative Divergence — always visible, receives filters ── */}
         <div className="section fade-up">
-          <NarrativeDivergence />
+          <NarrativeDivergence filters={filters} />
         </div>
 
         {/* ── Information Velocity — always visible ── */}
@@ -194,12 +192,12 @@ export default function App() {
           <VelocityChart />
         </div>
 
-        {/* ── Semantic Search — always visible ── */}
+        {/* ── Semantic Search — always visible, receives filters ── */}
         <div className="section fade-up">
-          <SearchPanel />
+          <SearchPanel filters={filters} />
         </div>
 
-        {/* ── Time Series — lazy: only fetches when scrolled near ── */}
+        {/* ── Time Series — lazy ── */}
         <LazySection
           fallback={<SectionSkeleton title="Post Activity Over Time" height="360px" />}
         >
