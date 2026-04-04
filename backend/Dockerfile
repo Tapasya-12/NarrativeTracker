@@ -17,6 +17,7 @@ RUN python -c "from sentence_transformers import SentenceTransformer; SentenceTr
 
 # Copy all backend files
 COPY --chown=user . .
+COPY --chown=user data/ ./data/
 
 # HuggingFace Spaces MUST expose port 7860
 EXPOSE 7860

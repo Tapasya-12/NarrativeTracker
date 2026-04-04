@@ -13,6 +13,9 @@ venv/
 .env/
 .env
 
+backend/venv/
+backend/.env
+
 # ==============================
 # Environment variables / secrets
 # ==============================
