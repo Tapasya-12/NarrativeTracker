@@ -12,13 +12,13 @@ const NET_TYPES = [
 
 const NET_DESCRIPTIONS = {
   subreddit:
-    "Directed graph: arrows show crosspost flow between subreddits. Node size = PageRank. Colors = ideological bloc. Louvain community detection groups structurally similar nodes.",
+    "Crosspost flow between communities. Node size = PageRank influence. Click any node to inspect it — or use Remove Top Node to see how influence redistributes.",
   author:
-    "Undirected graph: edges connect authors who posted in the same subreddit. Node size = PageRank. White ring = bridge author (posted across multiple ideological blocs).",
+    "Authors connected by shared posting activity. White ring = bridge author who posted across multiple ideological blocs — key vectors of cross-community influence.",
   source:
-    "Bipartite graph: subreddit nodes connected to news domain nodes. Edge thickness = citation count. Domain color: blue = left-leaning, gray = center, orange = right-leaning.",
+    "Which news domains each community cites. Blue = left-leaning, gray = center, orange = right-leaning. Echo chamber structure is visible in the clustering.",
   bias:
-    "Which news sources does each community cite? The echo chamber is visible as structure — right-bloc communities almost never cite left-leaning sources, and vice versa.",
+    "Citation bias by ideology. Right-bloc communities cite almost exclusively right-leaning sources, and vice versa — the echo chamber made quantitative.",
 }
 
 const BIAS_COLORS = {
@@ -595,9 +595,12 @@ function NetworkGraph({ filters }) {
             <p className="sec-title">Network Analysis</p>
             {!isBiasTab && data && (
               <p className="sec-desc" style={{ marginTop: "3px" }}>
-                {(data.nodes ? data.nodes.length : 0) + " nodes · " +
-                 (data.edges ? data.edges.length : 0) + " edges · " +
-                 NET_DESCRIPTIONS[netType]}
+                <span className="mono" style={{ color: "var(--text-primary)" }}>
+                  {(data.nodes ? data.nodes.length : 0) + " nodes · " +
+                  (data.edges ? data.edges.length : 0) + " edges"}
+                </span>
+                <span style={{ color: "var(--text-dim)" }}>{" · "}</span>
+                {NET_DESCRIPTIONS[netType]}
               </p>
             )}
             {isBiasTab && (

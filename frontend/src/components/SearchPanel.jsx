@@ -314,11 +314,11 @@ export default function SearchPanel({ filters }) {
 
       {/* ── Header ── */}
       <div style={{ marginBottom: "22px" }}>
-        <p className="sec-label">Core Feature</p>
         <p className="sec-title">Semantic Search</p>
         <p className="sec-desc">
-          Search by meaning — works across languages and with zero keyword overlap.
-          Powered by all-MiniLM-L6-v2 + FAISS IndexFlatIP.
+          Search by meaning, not keywords. Try a concept, emotion, or even a
+          sentence in any language — the engine finds semantically related posts
+          even with zero word overlap.
         </p>
       </div>
 

@@ -233,8 +233,8 @@ export default function TimeSeriesChart({ filters }) {
           <div>
             <p className="sec-title">Post Activity Over Time</p>
             <p className="sec-desc">
-              Weekly post counts across political communities.
-              Vertical markers indicate key political events.
+              Post volume Jul 2024 – Feb 2025, with key political events marked.
+              Switch to "By Bloc" to compare ideological communities side by side.
             </p>
           </div>
 

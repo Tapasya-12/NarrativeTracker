@@ -326,8 +326,9 @@ export default function VelocityChart() {
       <div style={{ marginBottom: "22px" }}>
         <p className="sec-title">Information Velocity</p>
         <p className="sec-desc">
-          Which community posted about a topic first? Track how narratives
-          spread across ideological communities over time.
+          Who breaks the story first? Enter any topic to trace which community
+          posted earliest — and map how the narrative propagated across the
+          ideological spectrum over time.
         </p>
       </div>
 

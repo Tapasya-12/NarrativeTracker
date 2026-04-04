@@ -404,8 +404,9 @@ export default function NarrativeDivergence({ filters }) {
       <div style={{ marginBottom: "22px" }}>
         <p className="sec-title">Narrative Divergence Tracker</p>
         <p className="sec-desc">
-          See how Left Radical, Center Left, Right, and Mixed communities
-          frame the same topic differently — with AI analysis of the framing gaps.
+          Same topic, four ideological lenses. Enter any keyword to see how
+          Left Radical, Center Left, Right, and Mixed communities frame it —
+          then get AI analysis of where the narratives diverge.
         </p>
       </div>
 

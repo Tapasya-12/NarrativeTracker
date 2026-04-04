@@ -137,8 +137,9 @@ function ClusterView() {
           <div>
             <p className="sec-title">Topic Clusters</p>
             <p className="sec-desc">
-              HDBSCAN clustering on sentence embeddings. Each dot = one post.
-              Colors = topic clusters. Gray = noise (unclustered).
+              8,799 posts clustered by semantic similarity using HDBSCAN on
+              384-dimensional sentence embeddings. Adjust the slider to explore
+              different cluster granularities. Gray dots = noise (no cluster assigned).
             </p>
           </div>
 
