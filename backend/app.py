@@ -208,7 +208,33 @@ def health():
 # ── ENDPOINT 2: STATS ─────────────────────────────────────────────────────────
 @app.route("/api/stats")
 def stats():
-    return Response(_stats_json, mimetype="application/json")
+    sub = request.args.get("subreddit", "all")
+
+    # "all" → return pre-cached instantly, zero computation
+    if sub == "all":
+        return Response(_stats_json, mimetype="application/json")
+
+    # Specific subreddit → filter _clean_df (fast, ~2ms on 8k rows)
+    data = _clean_df[_clean_df["subreddit"] == sub]
+    if not len(data):
+        return Response(_stats_json, mimetype="application/json")
+
+    top = data.nlargest(1, "score").iloc[0]
+    return jsonify({
+        "total_posts":      len(data),
+        "total_authors":    int(data["author"].nunique()),
+        "total_subreddits": 1,
+        "date_start":       str(data["created_utc"].min()),
+        "date_end":         str(data["created_utc"].max()),
+        "spam_flagged":     int(df[df["subreddit"] == sub]["is_spam"].sum()),
+        "crosspost_count":  int(data["crosspost_parent"].notna().sum()),
+        "avg_score":        round(float(data["score"].mean()), 1),
+        "top_post": {
+            "title":     top["title"],
+            "score":     int(top["score"]),
+            "subreddit": top["subreddit"],
+        }
+    })
 
 # ── ENDPOINT 3: SUBREDDITS ────────────────────────────────────────────────────
 @app.route("/api/subreddits")

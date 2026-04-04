@@ -180,7 +180,7 @@ export default function App() {
         </div>
 
         {/* ── Stats — always visible ── */}
-        <StatBar />
+        <StatBar filters={filters}/>
 
         {/* ── Narrative Divergence — always visible, receives filters ── */}
         <div className="section fade-up">
