@@ -1,3 +1,12 @@
+---
+title: NarrativeTracker Backend
+emoji: 📊
+colorFrom: blue
+colorTo: purple
+sdk: docker
+pinned: false
+---
+
 # NarrativeTracker
 
 ![Live Demo](https://img.shields.io/badge/Live%20Demo-Coming%20Soon-6b7280?style=flat-square)
@@ -75,7 +84,7 @@ NarrativeTracker uses a split architecture: React + Vite frontend for interactiv
 | Backend | Flask, flask-cors, flask-compress, DuckDB, FAISS (`IndexFlatIP`) |
 | ML/NLP | all-MiniLM-L6-v2 (384D), HDBSCAN, PCA, TF-IDF, PageRank, Louvain |
 | GenAI | Groq `llama-3.1-8b-instant` for summaries, query suggestions, framing analysis |
-| Deployment | Render (backend), Vercel (frontend) |
+| Deployment | HuggingFace Spaces (backend, Docker), Vercel (frontend) |
 
 Embedding map (external interactive exploration):
 https://atlas.nomic.ai/data/tapasyapatel.gda/narrativetracker-reddit-political/map
@@ -107,8 +116,6 @@ This view executes one semantic query across all four ideological blocs simultan
 
 Why it matters: It operationalizes narrative divergence as comparable evidence instead of anecdotal reading.
 
-Screenshot: [coming soon]
-
 Key technical detail: endpoint `/api/narrative_divergence` retrieves top semantic matches and partitions by `ideological_bloc`; `/api/narrative_analysis` then generates bloc-level framing analysis from returned titles.
 
 ### 2) Information Velocity (WOW Feature 2)
@@ -116,8 +123,6 @@ Key technical detail: endpoint `/api/narrative_divergence` retrieves top semanti
 This component identifies first movers for a topic and visualizes propagation order across communities. It includes per-subreddit mini timecharts and a First Mover marker with relevance context.
 
 Why it matters: It separates origin from amplification, which is necessary for influence analysis.
-
-Screenshot: [coming soon]
 
 Key technical detail: endpoint `/api/velocity` computes earliest relevant post timestamps per subreddit from semantic result sets and returns both first-post metadata and date-grouped timelines.
 
@@ -127,8 +132,6 @@ Search is embedding-based rather than token-overlap-based, with bloc filtering, 
 
 Why it matters: Research queries are often conceptual (for example, "abuse of power") and may not share vocabulary with the target posts.
 
-Screenshot: [coming soon]
-
 Key technical detail: FAISS `IndexFlatIP` over normalized embeddings enables cosine-equivalent retrieval; query embeddings are cached so repeated queries never re-embed.
 
 ### 4) Post Activity Over Time
@@ -136,8 +139,6 @@ Key technical detail: FAISS `IndexFlatIP` over normalized embeddings enables cos
 The timeline module supports weekly/daily/monthly views, overlays political event markers, and includes a "By Bloc" mode for direct ideological comparison in one chart.
 
 Why it matters: It links narrative surges to external events and highlights asymmetry between communities.
-
-Screenshot: [coming soon]
 
 Key technical detail: all subreddit-granularity combinations are precomputed at backend startup, and bloc-level time series are separately cached for instant retrieval.
 
@@ -147,8 +148,6 @@ The network module includes subreddit crosspost flow, bridge-author structure, s
 
 Why it matters: It quantifies influence topology and exposes whether information flow is centralized, fragmented, or insulated.
 
-Screenshot: [coming soon]
-
 Key technical detail: directed weighted graphs use PageRank for influence and Louvain for community structure; removal mode is computed by filtering nodes/edges server-side and recomputing visualization state client-side.
 
 ### 6) Topic Clusters
@@ -156,8 +155,6 @@ Key technical detail: directed weighted graphs use PageRank for influence and Lo
 Topic clusters are generated from semantically embedded posts, projected into an interactive scatter plot (8,799 points). A tunable `k` selector (5/8/12/20) allows sensitivity testing of narrative segmentation.
 
 Why it matters: It provides meso-level structure between individual posts and aggregate time/network metrics.
-
-Screenshot: [coming soon]
 
 Key technical detail: HDBSCAN runs on PCA-reduced 50D embeddings; cluster labels use TF-IDF keyword extraction; a 2D projection drives plot rendering. Full map is available in Nomic Atlas.
 
@@ -228,7 +225,7 @@ Required zero-overlap and multilingual cases validated for this project:
 ### 1) Clone and enter the repository
 
 ```bash
-git clone <your-fork-or-repo-url>
+git clone https://github.com/Tapasya-12/NarrativeTracker
 cd NarrativeTracker
 ```
 
@@ -296,24 +293,23 @@ These are used to regenerate analytic artifacts if you modify the source dataset
 
 ## Deployment
 
-Deployment status: not deployed yet. This section documents the target production setup.
+### Backend on HuggingFace Spaces
 
-### Backend on Render
+Deployed at: https://huggingface.co/spaces/Tapasya-12/narrativetracker-backend
 
-1. Create a Render Web Service from the repository.
-2. Set the root directory to `backend`.
-3. Build command: `pip install -r requirements.txt`
-4. Start command: `python app.py`
-5. Add environment variable `GROQ_API_KEY`.
-6. Expose service on port `5000` (or use Render-assigned port mapping).
+1. Space uses Docker SDK with a `Dockerfile` in `backend/`.
+2. Build context is sent from the project root so `data/` files are accessible.
+3. Add environment secret `GROQ_API_KEY` in Space Settings → Repository secrets.
+4. Health check endpoint: `https://Tapasya-12-narrativetracker-backend.hf.space/api/health`
+5. Expected response: `{"status": "ok", "total_posts": 8799}`
 
 ### Frontend on Vercel
 
 1. Import repository into Vercel.
 2. Set root directory to `frontend`.
-3. Build command: `npm run build`
-4. Output directory: `dist`
-5. Add environment variable `VITE_API_URL=<render-backend-url>`.
+3. Framework preset: Vite.
+4. Add environment variable: `VITE_API_URL=https://Tapasya-12-narrativetracker-backend.hf.space`
+5. After deploy, update CORS origins in `app.py` with the actual Vercel URL and redeploy to HuggingFace.
 
 -------------------------------------------------------------------------------
 
