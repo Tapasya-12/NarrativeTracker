@@ -61,7 +61,6 @@ function getSubBloc(subreddit) {
   return SUB_BLOC_MAP[subreddit] || "other"
 }
 
-// ── Style helpers ─────────────────────────────────────────────────────────────
 function ctrlBtn(isActive, activeColor) {
   return {
     padding: "4px 11px",
@@ -126,20 +125,16 @@ function BiasSummaryCards({ edges }) {
             }}>
               {b.label}
             </p>
-
-            {/* Stacked bar */}
             <div style={{
               height: "6px", borderRadius: "999px",
               overflow: "hidden", display: "flex",
               marginBottom: "10px",
-              background: "var(--bg-elevated)",
+              background: "rgba(255,255,255,0.05)",
             }}>
               <div style={{ width: leftPct   + "%", background: BIAS_COLORS.left,   transition: "width 0.4s" }} />
               <div style={{ width: centerPct + "%", background: BIAS_COLORS.center, transition: "width 0.4s" }} />
               <div style={{ width: rightPct  + "%", background: BIAS_COLORS.right,  transition: "width 0.4s" }} />
             </div>
-
-            {/* Counts */}
             {["left", "center", "right"].map(function(bk) {
               return (
                 <div key={bk} style={{
@@ -170,24 +165,18 @@ function BiasEdgeRow({ edge }) {
   const barWidth  = Math.min(100, edge.weight * 3)
 
   return (
-    <div
-      className="trow"
-      style={{
-        display: "flex", alignItems: "center",
-        gap: "10px", padding: "9px 14px",
-        borderBottom: "1px solid var(--border)",
-      }}
-    >
+    <div className="trow" style={{
+      display: "flex", alignItems: "center",
+      gap: "10px", padding: "9px 14px",
+      borderBottom: "1px solid var(--border)",
+    }}>
       <span className="mono" style={{
         fontSize: "12px", fontWeight: "600",
         color: subColor, minWidth: "140px",
       }}>
         {"r/" + edge.source}
       </span>
-
-      <div style={{
-        flex: 1, display: "flex", alignItems: "center", gap: "8px",
-      }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: "8px" }}>
         <div style={{
           height: "3px", width: barWidth + "px",
           background: biasColor + "50",
@@ -197,14 +186,12 @@ function BiasEdgeRow({ edge }) {
           {edge.weight + "×"}
         </span>
       </div>
-
       <span style={{
         fontSize: "12px", color: "var(--text-sec)",
         minWidth: "160px", textAlign: "right",
       }}>
         {edge.target}
       </span>
-
       <span style={{
         fontSize: "10px", fontWeight: "600",
         color: biasColor,
@@ -246,7 +233,6 @@ function SourceBiasTab({ sourceData }) {
   const remaining      = minFiltered.length - pageSize
   const hasMore        = remaining > 0
 
-  // Reset page when filters change
   const handleFilter = function(setter, val) {
     setter(val)
     setPageSize(15)
@@ -256,7 +242,7 @@ function SourceBiasTab({ sourceData }) {
     <div>
       <BiasSummaryCards edges={edges} />
 
-      {/* Controls row */}
+      {/* Controls */}
       <div style={{
         display: "flex", flexWrap: "wrap",
         gap: "20px", marginBottom: "16px",
@@ -266,69 +252,50 @@ function SourceBiasTab({ sourceData }) {
         border: "1px solid var(--border)",
         borderRadius: "var(--r-sm)",
       }}>
-        {/* Min citations */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span style={{ fontSize: "10px", fontWeight: "600", color: "var(--text-dim)",
-            textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Min
-          </span>
+            textTransform: "uppercase", letterSpacing: "0.08em" }}>Min</span>
           <div style={{ display: "flex", gap: "3px" }}>
             {[3, 5, 10, 20].map(function(v) {
               return (
-                <button
-                  key={v}
+                <button key={v}
                   onClick={function() { handleFilter(setMinWeight, v) }}
-                  style={ctrlBtn(minWeight === v, "var(--blue)")}
-                >
+                  style={ctrlBtn(minWeight === v, "var(--blue)")}>
                   {v + "+"}
                 </button>
               )
             })}
           </div>
         </div>
-
-        {/* Bias filter */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span style={{ fontSize: "10px", fontWeight: "600", color: "var(--text-dim)",
-            textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Bias
-          </span>
+            textTransform: "uppercase", letterSpacing: "0.08em" }}>Bias</span>
           <div style={{ display: "flex", gap: "3px" }}>
             {["all", "left", "center", "right"].map(function(bk) {
-              const activeColor = bk === "all"
-                ? "var(--blue)"
-                : BIAS_COLORS[bk]
               return (
-                <button
-                  key={bk}
+                <button key={bk}
                   onClick={function() { handleFilter(setFilterBias, bk) }}
-                  style={ctrlBtn(filterBias === bk, activeColor)}
-                >
+                  style={ctrlBtn(filterBias === bk,
+                    bk === "all" ? "var(--blue)" : BIAS_COLORS[bk])}>
                   {bk.charAt(0).toUpperCase() + bk.slice(1)}
                 </button>
               )
             })}
           </div>
         </div>
-
-        {/* Sort */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span style={{ fontSize: "10px", fontWeight: "600", color: "var(--text-dim)",
-            textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Sort
-          </span>
+            textTransform: "uppercase", letterSpacing: "0.08em" }}>Sort</span>
           <div style={{ display: "flex", gap: "3px" }}>
             {[
-              { k: "weight",    l: "Citations" },
+              { k: "weight", l: "Citations" },
               { k: "subreddit", l: "Community" },
-              { k: "domain",    l: "Domain"    },
+              { k: "domain", l: "Domain" },
             ].map(function(s) {
               return (
-                <button
-                  key={s.k}
+                <button key={s.k}
                   onClick={function() { setSortBy(s.k) }}
-                  style={ctrlBtn(sortBy === s.k, "var(--blue)")}
-                >
+                  style={ctrlBtn(sortBy === s.k, "var(--blue)")}>
                   {s.l}
                 </button>
               )
@@ -337,7 +304,7 @@ function SourceBiasTab({ sourceData }) {
         </div>
       </div>
 
-      {/* Stats strip + legend */}
+      {/* Stats + legend */}
       <div style={{
         display: "flex", justifyContent: "space-between",
         alignItems: "center", flexWrap: "wrap",
@@ -357,8 +324,6 @@ function SourceBiasTab({ sourceData }) {
             {" total citations"}
           </span>
         </div>
-
-        {/* Legend */}
         <div style={{ display: "flex", gap: "12px" }}>
           {["left", "center", "right"].map(function(bk) {
             return (
@@ -395,7 +360,6 @@ function SourceBiasTab({ sourceData }) {
           borderRadius: "var(--r-md)",
           overflow: "hidden",
         }}>
-          {/* Table header */}
           <div style={{
             display: "flex", gap: "10px",
             padding: "9px 14px",
@@ -403,10 +367,10 @@ function SourceBiasTab({ sourceData }) {
             borderBottom: "1px solid var(--border)",
           }}>
             {[
-              { label: "Community",   w: "140px"  },
-              { label: "Volume",      flex: 1      },
+              { label: "Community",   w: "140px"              },
+              { label: "Volume",      flex: 1                 },
               { label: "News Source", w: "160px", right: true },
-              { label: "Bias",        w: "80px",  center: true },
+              { label: "Bias",        w: "80px", center: true },
             ].map(function(h) {
               return (
                 <span key={h.label} style={{
@@ -423,12 +387,10 @@ function SourceBiasTab({ sourceData }) {
             })}
           </div>
 
-          {/* Rows */}
           {visible.map(function(e, i) {
             return <BiasEdgeRow key={i} edge={e} />
           })}
 
-          {/* Show more */}
           {hasMore && (
             <div style={{
               padding: "14px 16px",
@@ -464,12 +426,8 @@ function SourceBiasTab({ sourceData }) {
             </div>
           )}
 
-          {/* All shown */}
           {!hasMore && minFiltered.length > 0 && (
-            <div style={{
-              padding: "10px 16px",
-              borderTop: "1px solid var(--border)",
-            }}>
+            <div style={{ padding: "10px 16px", borderTop: "1px solid var(--border)" }}>
               <p style={{ fontSize: "11px", color: "var(--text-dim)", textAlign: "center" }}>
                 {"All " + minFiltered.length + " results shown"}
               </p>
@@ -482,7 +440,7 @@ function SourceBiasTab({ sourceData }) {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function NetworkGraph() {
+export default function NetworkGraph({ filters }) {
   const [netType,    setNetType]    = useState("subreddit")
   const [removeNode, setRemoveNode] = useState(null)
   const [selected,   setSelected]   = useState(null)
@@ -504,6 +462,7 @@ export default function NetworkGraph() {
     { min_weight: 3 }
   )
 
+  // ── Measure container ─────────────────────────────────────────────────────
   useEffect(function() {
     function measure() {
       if (!containerRef.current) return
@@ -517,10 +476,36 @@ export default function NetworkGraph() {
     return function() { observer.disconnect(); clearTimeout(t) }
   }, [])
 
+  // ── Reset on tab change ───────────────────────────────────────────────────
   useEffect(function() {
     setSelected(null)
     setRemoveNode(null)
   }, [netType])
+
+  // ── Derive sidebar values ─────────────────────────────────────────────────
+  const sidebarSub = filters && filters.subreddit !== "all"
+    ? filters.subreddit : null
+
+  const sidebarBlocColor = sidebarSub
+    ? (BLOC_COLORS[SUB_BLOC_MAP[sidebarSub] || "other"] || "#4f8ef7")
+    : null
+
+  // ── KEY FIX: use a ref for sidebarSub inside nodePainter ─────────────────
+  // Without this, every sidebar click recreates nodePainter,
+  // which makes ForceGraph2D fully re-render and re-simulate.
+  const sidebarSubRef = useRef(sidebarSub)
+  useEffect(function() {
+    sidebarSubRef.current = sidebarSub
+  }, [sidebarSub])
+
+  // ── Auto-select matching node when sidebar subreddit changes ──────────────
+  useEffect(function() {
+    if (netType !== "subreddit") return
+    if (!sidebarSub) return
+    if (!data || !data.nodes) return
+    var match = data.nodes.find(function(n) { return n.id === sidebarSub })
+    if (match) setSelected(match)
+  }, [sidebarSub, data, netType])
 
   const topNode = data && data.nodes
     ? data.nodes.reduce(function(top, n) {
@@ -541,25 +526,40 @@ export default function NetworkGraph() {
     return Math.max(2, Math.min(20, (node.pagerank || 0) * 8000 + 3))
   }, [])
 
+  // ── nodePainter — NO sidebarSub in deps, reads ref instead ───────────────
   const nodePainter = useCallback(function(node, ctx, globalScale) {
     const size  = Math.max(2, Math.min(20, (node.pagerank || 0) * 8000 + 3))
     const color = nodeColor(node)
+
     ctx.beginPath()
     ctx.arc(node.x, node.y, size, 0, 2 * Math.PI)
     ctx.fillStyle = color
     ctx.fill()
+
     if (node.is_bridge) {
       ctx.strokeStyle = "rgba(255,255,255,0.7)"
       ctx.lineWidth = 1.5 / globalScale
       ctx.stroke()
     }
+
+    // Read sidebarSub from ref — no re-creation of painter on sidebar change
+    if (sidebarSubRef.current && node.id === sidebarSubRef.current) {
+      ctx.beginPath()
+      ctx.arc(node.x, node.y, size + 5 / globalScale, 0, 2 * Math.PI)
+      ctx.strokeStyle = color
+      ctx.lineWidth = 2.5 / globalScale
+      ctx.globalAlpha = 0.9
+      ctx.stroke()
+      ctx.globalAlpha = 1
+    }
+
     if (globalScale > 1.5) {
       ctx.font = (10 / globalScale) + "px Inter, sans-serif"
       ctx.fillStyle = "#e2e8f0"
       ctx.textAlign = "center"
       ctx.fillText(node.id, node.x, node.y + size + 8 / globalScale)
     }
-  }, [nodeColor])
+  }, [nodeColor])  // sidebarSub intentionally excluded — uses ref
 
   const graphData = data
     ? {
@@ -571,113 +571,167 @@ export default function NetworkGraph() {
     : { nodes: [], links: [] }
 
   return (
-    <section className="w-full">
+    <section style={{ width: "100%" }}>
 
-      {/* Header */}
-      <div className="sec-head">
-        <div>
-          <p className="sec-title">Network Analysis</p>
-          {!isBiasTab && data && (
-            <p className="sec-desc">
-              {(data.nodes ? data.nodes.length : 0) + " nodes · " +
-               (data.edges ? data.edges.length : 0) + " edges"}
-            </p>
-          )}
-        </div>
+      {/* ── Header ── */}
+      <div style={{ marginBottom: "22px" }}>
+        <div style={{
+          display: "flex", alignItems: "flex-start",
+          justifyContent: "space-between",
+          flexWrap: "wrap", gap: "12px",
+        }}>
+          <div>
+            <p className="sec-title">Network Analysis</p>
+            {!isBiasTab && data && (
+              <p className="sec-desc" style={{ marginTop: "3px" }}>
+                {(data.nodes ? data.nodes.length : 0) + " nodes · " +
+                 (data.edges ? data.edges.length : 0) + " edges · " +
+                 NET_DESCRIPTIONS[netType]}
+              </p>
+            )}
+            {isBiasTab && (
+              <p className="sec-desc" style={{ marginTop: "3px" }}>
+                {NET_DESCRIPTIONS[netType]}
+              </p>
+            )}
+          </div>
 
-        {/* Tabs + action buttons */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "4px", alignItems: "center" }}>
-          {NET_TYPES.map(function(t) {
-            const isActive = netType === t.key
-            return (
+          {/* Tabs */}
+          <div style={{
+            display: "flex", flexWrap: "wrap",
+            gap: "4px", alignItems: "center",
+          }}>
+            <div style={{
+              display: "flex", gap: "3px",
+              background: "rgba(255,255,255,0.03)",
+              border: "1px solid var(--border)",
+              borderRadius: "8px", padding: "3px",
+            }}>
+              {NET_TYPES.map(function(t) {
+                const isActive = netType === t.key
+                return (
+                  <button key={t.key}
+                    onClick={function() { setNetType(t.key) }}
+                    style={{
+                      padding: "5px 12px",
+                      borderRadius: "6px",
+                      fontSize: "11px", fontWeight: "500",
+                      border: "none", cursor: "pointer",
+                      fontFamily: "inherit", transition: "all 0.15s",
+                      background: isActive ? "rgba(79,142,247,0.18)" : "transparent",
+                      color: isActive ? "#93bbfd" : "var(--text-dim)",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                )
+              })}
+            </div>
+
+            {!isBiasTab && topNode && netType !== "source" && (
               <button
-                key={t.key}
-                onClick={function() { setNetType(t.key) }}
-                className={isActive ? "btn btn-active" : "btn btn-ghost"}
+                onClick={function() {
+                  setRemoveNode(removeNode ? null : topNode.id)
+                }}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "var(--r-sm)",
+                  fontSize: "11px", fontWeight: "500",
+                  cursor: "pointer", fontFamily: "inherit",
+                  transition: "all 0.15s",
+                  background: removeNode
+                    ? "rgba(52,211,153,0.08)" : "rgba(248,113,113,0.08)",
+                  border: removeNode
+                    ? "1px solid rgba(52,211,153,0.2)"
+                    : "1px solid rgba(248,113,113,0.2)",
+                  color: removeNode ? "#6ee7b7" : "#fca5a5",
+                }}
               >
-                {t.label}
+                {removeNode
+                  ? "↩ Restore " + topNode.id
+                  : "✕ Remove " + topNode.id
+                }
               </button>
-            )
-          })}
-
-          {/* Remove / Restore top node */}
-          {!isBiasTab && topNode && netType !== "source" && (
-            <button
-              onClick={function() {
-                setRemoveNode(removeNode ? null : topNode.id)
-              }}
-              style={{
-                padding: "6px 14px",
-                borderRadius: "var(--r-sm)",
-                fontSize: "12px", fontWeight: "500",
-                cursor: "pointer", fontFamily: "inherit",
-                transition: "all 0.15s",
-                background: removeNode
-                  ? "rgba(52,211,153,0.1)"
-                  : "rgba(248,113,113,0.1)",
-                border: removeNode
-                  ? "1px solid rgba(52,211,153,0.25)"
-                  : "1px solid rgba(248,113,113,0.25)",
-                color: removeNode ? "#6ee7b7" : "#fca5a5",
-              }}
-            >
-              {removeNode
-                ? "↩ Restore " + topNode.id
-                : "✕ Remove " + topNode.id
-              }
-            </button>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Description */}
-      <p className="sec-desc" style={{ marginBottom: "20px" }}>
-        {NET_DESCRIPTIONS[netType]}
-      </p>
+      {/* Sidebar context banner */}
+      {sidebarSub && netType === "subreddit" && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: "8px",
+          padding: "8px 14px",
+          background: sidebarBlocColor + "08",
+          border: "1px solid " + sidebarBlocColor + "25",
+          borderLeft: "3px solid " + sidebarBlocColor,
+          borderRadius: "var(--r-sm)",
+          marginBottom: "16px", fontSize: "11px",
+        }}>
+          <span style={{ color: "var(--text-dim)" }}>Sidebar context:</span>
+          <span style={{ color: sidebarBlocColor, fontWeight: "600" }}>
+            {"r/" + sidebarSub}
+          </span>
+          <span style={{ color: "var(--text-dim)" }}>
+            · node auto-selected and highlighted
+          </span>
+          <button
+            onClick={function() { setSelected(null) }}
+            style={{
+              marginLeft: "auto", background: "none", border: "none",
+              color: "var(--text-dim)", cursor: "pointer",
+              fontSize: "11px", fontFamily: "inherit",
+              padding: "0 2px", transition: "color 0.15s",
+            }}
+            onMouseEnter={function(e) { e.currentTarget.style.color = "var(--text-primary)" }}
+            onMouseLeave={function(e) { e.currentTarget.style.color = "var(--text-dim)" }}
+          >
+            clear ×
+          </button>
+        </div>
+      )}
 
       {/* Remove node notice */}
       {removeNode && (
         <div style={{
           marginBottom: "16px", padding: "10px 14px",
-          background: "rgba(251,191,36,0.05)",
-          border: "1px solid rgba(251,191,36,0.15)",
-          borderLeft: "3px solid rgba(251,191,36,0.5)",
+          background: "rgba(251,191,36,0.04)",
+          border: "1px solid rgba(251,191,36,0.12)",
+          borderLeft: "3px solid rgba(251,191,36,0.4)",
           borderRadius: "var(--r-sm)",
           fontSize: "12px", color: "#fcd34d",
         }}>
           <strong>{removeNode}</strong>
-          {" removed from graph. PageRank redistributes across " +
+          {" removed. PageRank redistributes across " +
            (data && data.nodes ? data.nodes.length : 0) + " remaining nodes."}
         </div>
       )}
 
-      {/* ── Bias tab ── */}
+      {/* Bias tab */}
       {isBiasTab && (
         <div>
           {sourceData
             ? <SourceBiasTab sourceData={sourceData} />
-            : <div className="skeleton" style={{ height: "200px" }} />
+            : <div className="skeleton" style={{ height: "200px", borderRadius: "var(--r-md)" }} />
           }
         </div>
       )}
 
-      {/* ── Graph tabs ── */}
+      {/* Graph tabs */}
       {!isBiasTab && (
         <div>
-          {/* Loading */}
           {loading && (
-            <div
-              className="skeleton"
-              style={{ height: "420px", borderRadius: "var(--r-md)" }}
-            />
+            <div className="skeleton"
+              style={{ height: "420px", borderRadius: "var(--r-md)" }} />
           )}
 
-          {/* Error */}
           {error && !loading && (
             <div style={{
               padding: "14px 16px",
               background: "rgba(248,113,113,0.05)",
               border: "1px solid rgba(248,113,113,0.15)",
+              borderLeft: "3px solid #f87171",
               borderRadius: "var(--r-md)",
               color: "#fca5a5", fontSize: "13px",
             }}>
@@ -685,12 +739,10 @@ export default function NetworkGraph() {
             </div>
           )}
 
-          {/* Empty */}
           {!loading && !error && data && data.nodes && data.nodes.length === 0 && (
             <div style={{
               height: "160px", display: "flex",
               alignItems: "center", justifyContent: "center",
-              flexDirection: "column", gap: "8px",
               background: "var(--bg-card)",
               border: "1px solid var(--border)",
               borderRadius: "var(--r-md)",
@@ -703,17 +755,13 @@ export default function NetworkGraph() {
 
           {/* Force graph */}
           {!loading && !error && data && data.nodes && data.nodes.length > 0 && (
-            <div
-              ref={containerRef}
-              style={{
-                background: "#03070f",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--r-md)",
-                overflow: "hidden",
-                width: "100%",
-                height: dimensions.h + "px",
-              }}
-            >
+            <div ref={containerRef} style={{
+              background: "var(--bg-base, #02060f)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--r-md)",
+              overflow: "hidden", width: "100%",
+              height: dimensions.h + "px",
+            }}>
               <ForceGraph2D
                 graphData={graphData}
                 nodeColor={nodeColor}
@@ -730,7 +778,7 @@ export default function NetworkGraph() {
                 linkDirectionalArrowLength={netType === "subreddit" ? 5 : 0}
                 linkDirectionalArrowRelPos={0.85}
                 linkColor={function() { return "rgba(148,163,184,0.15)" }}
-                backgroundColor="#03070f"
+                backgroundColor="var(--bg-base, #02060f)"
                 width={dimensions.w}
                 height={dimensions.h}
                 onNodeClick={function(n) {
@@ -745,97 +793,174 @@ export default function NetworkGraph() {
             </div>
           )}
 
-          {/* Selected node panel */}
+          {/* ── Selected node panel — improved UI ── */}
           {selected && !loading && (
             <div style={{
-              marginTop: "12px", padding: "16px",
+              marginTop: "14px",
               background: "var(--bg-card)",
-              border: "1px solid var(--border)",
+              border: "1px solid " + (
+                sidebarSub && selected.id === sidebarSub
+                  ? sidebarBlocColor + "50"
+                  : "var(--border)"
+              ),
+              borderLeft: "3px solid " + (
+                BLOC_COLORS[selected.bloc] || "var(--border-mid)"
+              ),
               borderRadius: "var(--r-md)",
+              overflow: "hidden",
             }}>
+
+              {/* Panel header */}
               <div style={{
                 display: "flex", justifyContent: "space-between",
-                alignItems: "center", marginBottom: "14px",
+                alignItems: "center",
+                padding: "14px 18px",
+                background: sidebarSub && selected.id === sidebarSub
+                  ? sidebarBlocColor + "12"
+                  : "var(--bg-elevated)",
+                borderBottom: "1px solid var(--border)",
               }}>
-                <p style={{
-                  fontSize: "15px", fontWeight: "600",
-                  color: "var(--text-primary)",
+                <div style={{
+                  display: "flex", alignItems: "center",
+                  gap: "10px", flexWrap: "wrap",
                 }}>
-                  {selected.id}
-                </p>
+                  {/* Glowing dot */}
+                  <div style={{
+                    width: "12px", height: "12px",
+                    borderRadius: "50%",
+                    background: BLOC_COLORS[selected.bloc] || "#6b7280",
+                    boxShadow: "0 0 8px " +
+                      (BLOC_COLORS[selected.bloc] || "#6b7280") + "80",
+                    flexShrink: 0,
+                  }} />
+
+                  {/* Name with r/ prefix */}
+                  <p style={{
+                    fontSize: "15px", fontWeight: "700",
+                    color: "var(--text-primary)", letterSpacing: "-0.3px",
+                  }}>
+                    {"r/" + selected.id}
+                  </p>
+
+                  {/* Sidebar badge */}
+                  {sidebarSub && selected.id === sidebarSub && (
+                    <span style={{
+                      fontSize: "9px", fontWeight: "700",
+                      color: "white",
+                      background: sidebarBlocColor,
+                      borderRadius: "999px",
+                      padding: "2px 9px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.07em",
+                      boxShadow: "0 0 8px " + sidebarBlocColor + "60",
+                    }}>
+                      Sidebar selection
+                    </span>
+                  )}
+
+                  {/* Bridge badge */}
+                  {selected.is_bridge && (
+                    <span style={{
+                      fontSize: "9px", fontWeight: "700",
+                      color: "#fbbf24",
+                      background: "rgba(251,191,36,0.12)",
+                      border: "1px solid rgba(251,191,36,0.25)",
+                      borderRadius: "999px",
+                      padding: "2px 9px",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.07em",
+                    }}>
+                      Bridge Author
+                    </span>
+                  )}
+                </div>
+
+                {/* Close button */}
                 <button
                   onClick={function() { setSelected(null) }}
                   style={{
-                    background: "none", border: "none",
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "6px",
                     color: "var(--text-dim)", cursor: "pointer",
-                    fontSize: "12px", padding: "2px 6px",
-                    borderRadius: "var(--r-sm)",
-                    transition: "color 0.15s",
+                    fontSize: "13px", lineHeight: 1,
+                    padding: "5px 9px", transition: "all 0.15s",
                   }}
                   onMouseEnter={function(e) {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.08)"
                     e.currentTarget.style.color = "var(--text-primary)"
                   }}
                   onMouseLeave={function(e) {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.04)"
                     e.currentTarget.style.color = "var(--text-dim)"
                   }}
                 >
-                  ✕ close
+                  ×
                 </button>
               </div>
 
+              {/* Stat cells */}
               <div style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-                gap: "8px",
+                gridTemplateColumns: "repeat(4, 1fr)",
               }}>
                 {[
                   selected.pagerank != null && {
-                    label: "PageRank Score",
+                    label: "PageRank",
                     value: selected.pagerank.toFixed(6),
                     mono: true,
+                    color: "var(--blue, #4f8ef7)",
                   },
                   selected.post_count != null && {
                     label: "Total Posts",
                     value: selected.post_count.toLocaleString(),
+                    mono: true,
+                    color: null,
                   },
                   selected.bloc && {
                     label: "Ideological Bloc",
                     value: selected.bloc.replace("_", " "),
+                    mono: false,
                     color: BLOC_COLORS[selected.bloc],
                   },
                   selected.community != null && {
                     label: "Louvain Community",
-                    value: String(selected.community),
+                    value: "#" + String(selected.community),
+                    mono: true,
+                    color: null,
                   },
                   selected.subreddits && selected.subreddits.length > 0 && {
                     label: "Active In",
-                    value: selected.subreddits.map(function(s) { return "r/" + s }).join(", "),
+                    value: selected.subreddits
+                      .map(function(s) { return "r/" + s }).join(", "),
+                    mono: false,
+                    color: null,
                   },
-                  selected.is_bridge && {
-                    label: "Role",
-                    value: "Bridge Author — posts across multiple blocs",
-                    color: "#fbbf24",
-                  },
-                ].filter(Boolean).map(function(item) {
+                ].filter(Boolean).map(function(item, idx, arr) {
                   return (
                     <div key={item.label} style={{
-                      padding: "10px 12px",
-                      background: "var(--bg-elevated)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "var(--r-sm)",
+                      padding: "14px 18px",
+                      background: idx % 2 === 0
+                        ? "var(--bg-card)"
+                        : "rgba(255,255,255,0.015)",
+                      borderRight: idx < arr.length - 1
+                        ? "1px solid var(--border)" : "none",
                     }}>
                       <p style={{
-                        fontSize: "9px", fontWeight: "600",
+                        fontSize: "9px", fontWeight: "700",
                         color: "var(--text-dim)",
-                        textTransform: "uppercase", letterSpacing: "0.09em",
-                        marginBottom: "5px",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.12em",
+                        marginBottom: "6px",
                       }}>
                         {item.label}
                       </p>
                       <p style={{
-                        fontSize: "12px", fontWeight: "500",
+                        fontSize: "13px", fontWeight: "600",
                         color: item.color || "var(--text-primary)",
-                        fontFamily: item.mono ? "var(--text-mono)" : "inherit",
+                        fontFamily: item.mono
+                          ? "var(--text-mono, monospace)" : "inherit",
+                        wordBreak: "break-word", lineHeight: 1.4,
                       }}>
                         {item.value}
                       </p>
@@ -855,16 +980,17 @@ export default function NetworkGraph() {
               {[
                 "Node size = PageRank",
                 "Node color = Louvain community",
-                netType === "author"    ? "White ring = bridge author" : null,
+                netType === "author"    ? "White ring = bridge author"   : null,
                 netType === "subreddit" ? "Arrows = crosspost direction" : null,
+                sidebarSub && netType === "subreddit"
+                  ? "Outer ring = sidebar selection" : null,
               ].filter(Boolean).map(function(txt) {
                 return (
                   <span key={txt} style={{
-                    fontSize: "10px", color: "var(--text-sec)",
+                    fontSize: "10px", color: "var(--text-dim)",
                     background: "var(--bg-card)",
                     border: "1px solid var(--border)",
-                    borderRadius: "999px",
-                    padding: "3px 10px",
+                    borderRadius: "999px", padding: "3px 10px",
                   }}>
                     {txt}
                   </span>

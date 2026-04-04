@@ -19,6 +19,26 @@ const EXAMPLE_QUERIES = [
   "democratic institutions",
 ]
 
+const SUBREDDIT_TO_BLOC = {
+  Anarchism:           "left_radical",
+  socialism:           "left_radical",
+  Liberal:             "center_left",
+  democrats:           "center_left",
+  politics:            "center_left",
+  neoliberal:          "center_left",
+  PoliticalDiscussion: "center_left",
+  Conservative:        "right",
+  Republican:          "right",
+  worldpolitics:       "mixed",
+}
+
+const BLOC_LABEL = {
+  left_radical: "Left Radical",
+  center_left:  "Center Left",
+  right:        "Right",
+  mixed:        "Mixed",
+}
+
 // ── Post card ─────────────────────────────────────────────────────────────────
 function PostCard({ post, bloc }) {
   const color      = BLOC_COLORS[bloc] || "#6b7280"
@@ -34,7 +54,6 @@ function PostCard({ post, bloc }) {
       className="nd-card"
       style={{ display: "block", textDecoration: "none", marginBottom: "8px" }}
     >
-      {/* Title */}
       <p style={{
         fontSize: "12px",
         color: "var(--text-primary)",
@@ -48,13 +67,9 @@ function PostCard({ post, bloc }) {
       }}>
         {post.title}
       </p>
-
-      {/* Meta row */}
       <div style={{
-        display: "flex",
-        flexWrap: "wrap",
-        alignItems: "center",
-        gap: "6px",
+        display: "flex", flexWrap: "wrap",
+        alignItems: "center", gap: "6px",
       }}>
         <span style={{
           fontSize: "10px", fontWeight: "600",
@@ -67,19 +82,16 @@ function PostCard({ post, bloc }) {
         }}>
           {"r/" + post.subreddit}
         </span>
-
         {post.score > 0 && (
           <span style={{ fontSize: "10px", color: "var(--text-dim)" }}>
             {"↑ " + post.score.toLocaleString()}
           </span>
         )}
-
         {date && (
           <span style={{ fontSize: "10px", color: "var(--text-dim)" }}>
             {date}
           </span>
         )}
-
         <span style={{
           fontSize: "10px", fontWeight: "700",
           color: color, marginLeft: "auto",
@@ -93,18 +105,28 @@ function PostCard({ post, bloc }) {
 }
 
 // ── Bloc column ───────────────────────────────────────────────────────────────
-function BlocColumn({ bloc, label, posts, loading }) {
+function BlocColumn({ bloc, label, posts, loading, highlighted }) {
   const color = BLOC_COLORS[bloc] || "#6b7280"
 
   return (
-    <div style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
-
+    <div style={{
+      minWidth: 0,
+      display: "flex",
+      flexDirection: "column",
+      borderRadius: "10px",
+      padding: highlighted ? "12px" : "0",
+      background: highlighted ? color + "08" : "transparent",
+      border: highlighted
+        ? "1px solid " + color + "35"
+        : "1px solid transparent",
+      transition: "all 0.25s",
+    }}>
       {/* Column header */}
       <div style={{
         display: "flex", alignItems: "center", gap: "7px",
         paddingBottom: "10px",
         marginBottom: "12px",
-        borderBottom: "2px solid " + color,
+        borderBottom: (highlighted ? "3px" : "2px") + " solid " + color,
       }}>
         <div style={{
           width: "8px", height: "8px", borderRadius: "50%",
@@ -117,18 +139,31 @@ function BlocColumn({ bloc, label, posts, loading }) {
         }}>
           {label}
         </p>
+        {/* NEW: sidebar badge */}
+        {highlighted && (
+          <span style={{
+            fontSize: "9px", fontWeight: "700",
+            color: "white",
+            background: color,
+            borderRadius: "999px",
+            padding: "2px 8px",
+            marginLeft: "auto",
+            textTransform: "uppercase",
+            letterSpacing: "0.06em",
+            boxShadow: "0 0 8px " + color + "60",
+          }}>
+            Sidebar
+          </span>
+        )}
       </div>
 
-      {/* Loading skeletons */}
+      {/* Loading */}
       {loading && (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           {[90, 80, 85].map(function(h, i) {
             return (
-              <div
-                key={i}
-                className="skeleton"
-                style={{ height: h + "px", borderRadius: "8px" }}
-              />
+              <div key={i} className="skeleton"
+                style={{ height: h + "px", borderRadius: "8px" }} />
             )
           })}
         </div>
@@ -141,7 +176,7 @@ function BlocColumn({ bloc, label, posts, loading }) {
         })
       }
 
-      {/* Empty state */}
+      {/* Empty */}
       {!loading && (!posts || posts.length === 0) && (
         <div style={{
           flex: 1, minHeight: "100px",
@@ -153,10 +188,8 @@ function BlocColumn({ bloc, label, posts, loading }) {
           padding: "20px 12px",
         }}>
           <p style={{
-            fontSize: "11px",
-            color: "var(--text-dim)",
-            textAlign: "center",
-            lineHeight: "1.5",
+            fontSize: "11px", color: "var(--text-dim)",
+            textAlign: "center", lineHeight: "1.5",
           }}>
             No relevant posts in this community
           </p>
@@ -187,16 +220,12 @@ function FramingAnalysis({ analysis, loading }) {
       }}>
         AI Framing Analysis
       </p>
-
       {loading ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           {[100, 88, 70].map(function(w, i) {
             return (
-              <div
-                key={i}
-                className="skeleton"
-                style={{ height: "11px", width: w + "%", borderRadius: "4px" }}
-              />
+              <div key={i} className="skeleton"
+                style={{ height: "11px", width: w + "%", borderRadius: "4px" }} />
             )
           })}
         </div>
@@ -216,7 +245,7 @@ function FramingAnalysis({ analysis, loading }) {
 }
 
 // ── Pre-search bloc preview ───────────────────────────────────────────────────
-function BlocPreview() {
+function BlocPreview({ sidebarBloc }) {
   const SUB_LABELS = {
     left_radical: "r/Anarchism · r/socialism",
     center_left:  "r/Liberal · r/politics · r/neoliberal",
@@ -232,15 +261,18 @@ function BlocPreview() {
       marginTop: "20px",
     }}>
       {BLOCS.map(function(b) {
-        const color = BLOC_COLORS[b.key] || "#6b7280"
+        const color       = BLOC_COLORS[b.key] || "#6b7280"
+        const isHighlight = sidebarBloc === b.key
+
         return (
           <div key={b.key} style={{
             padding: "14px 12px",
-            background: color + "0c",
-            border: "1px solid " + color + "22",
+            background: isHighlight ? color + "14" : color + "0c",
+            border: "1px solid " + (isHighlight ? color + "40" : color + "22"),
             borderTop: "2px solid " + color,
             borderRadius: "10px",
             textAlign: "center",
+            transition: "all 0.2s",
           }}>
             <p style={{
               fontSize: "11px", fontWeight: "700",
@@ -248,6 +280,22 @@ function BlocPreview() {
               letterSpacing: "0.02em",
             }}>
               {b.label}
+              {isHighlight && (
+                <span style={{
+                  display: "inline-block",
+                  marginLeft: "6px",
+                  fontSize: "8px",
+                  color: color,
+                  background: color + "20",
+                  borderRadius: "999px",
+                  padding: "1px 5px",
+                  verticalAlign: "middle",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                }}>
+                  Sidebar
+                </span>
+              )}
             </p>
             <p style={{
               fontSize: "10px",
@@ -265,7 +313,7 @@ function BlocPreview() {
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
-export default function NarrativeDivergence() {
+export default function NarrativeDivergence({ filters }) {
   const [query,        setQuery]        = useState("")
   const [results,      setResults]      = useState(null)
   const [analysis,     setAnalysis]     = useState("")
@@ -274,7 +322,16 @@ export default function NarrativeDivergence() {
   const [error,        setError]        = useState(null)
   const [lastQuery,    setLastQuery]    = useState("")
 
-  const handleSearch = async () => {
+  // Derive sidebar bloc
+  const sidebarBloc = filters && filters.subreddit !== "all"
+    ? (SUBREDDIT_TO_BLOC[filters.subreddit] || null)
+    : null
+
+  const sidebarBlocColor = sidebarBloc
+    ? (BLOC_COLORS[sidebarBloc] || "var(--blue)")
+    : null
+
+  const handleSearch = async function() {
     const q = query.trim()
     if (!q || q.length < 2) return
     setLoadingPosts(true)
@@ -284,7 +341,9 @@ export default function NarrativeDivergence() {
     setError(null)
     setLastQuery(q)
     try {
-      const divRes = await axios.get(BASE + "/api/narrative_divergence", { params: { q } })
+      const divRes = await axios.get(BASE + "/api/narrative_divergence", {
+        params: { q },
+      })
       setResults(divRes.data)
       setLoadingPosts(false)
       try {
@@ -341,13 +400,37 @@ export default function NarrativeDivergence() {
         }
       `}</style>
 
-      {/* ── Section header ── */}
+      {/* ── Header ── */}
       <div style={{ marginBottom: "22px" }}>
         <p className="sec-title">Narrative Divergence Tracker</p>
         <p className="sec-desc">
-          See how Left Radical, Center Left, Right, and Mixed communities frame the same topic differently — with AI analysis of the framing gaps.
+          See how Left Radical, Center Left, Right, and Mixed communities
+          frame the same topic differently — with AI analysis of the framing gaps.
         </p>
       </div>
+
+      {/* ── NEW: Sidebar context banner ── */}
+      {sidebarBloc && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: "8px",
+          padding: "8px 14px",
+          background: sidebarBlocColor + "08",
+          border: "1px solid " + sidebarBlocColor + "25",
+          borderLeft: "3px solid " + sidebarBlocColor,
+          borderRadius: "var(--r-sm)",
+          marginBottom: "16px",
+          fontSize: "11px",
+        }}>
+          <span style={{ color: "var(--text-dim)" }}>Sidebar context:</span>
+          <span style={{ color: sidebarBlocColor, fontWeight: "600" }}>
+            {"r/" + filters.subreddit}
+          </span>
+          <span style={{ color: "var(--text-dim)" }}>
+            {"→ " + (BLOC_LABEL[sidebarBloc] || sidebarBloc) +
+             " bloc column highlighted"}
+          </span>
+        </div>
+      )}
 
       {/* ── Search input ── */}
       <div style={{ display: "flex", gap: "10px", marginBottom: "14px" }}>
@@ -370,10 +453,7 @@ export default function NarrativeDivergence() {
 
       {/* ── Short query warning ── */}
       {query.length > 0 && query.trim().length < 2 && (
-        <p style={{
-          fontSize: "11px", color: "#fbbf24",
-          marginBottom: "12px",
-        }}>
+        <p style={{ fontSize: "11px", color: "#fbbf24", marginBottom: "12px" }}>
           Please enter at least 2 characters
         </p>
       )}
@@ -394,11 +474,9 @@ export default function NarrativeDivergence() {
           </span>
           {EXAMPLE_QUERIES.map(function(q) {
             return (
-              <button
-                key={q}
+              <button key={q}
                 onClick={function() { handleExampleClick(q) }}
-                className="nd-chip"
-              >
+                className="nd-chip">
                 {q}
               </button>
             )
@@ -424,7 +502,6 @@ export default function NarrativeDivergence() {
       {/* ── Results ── */}
       {(results || loadingPosts) && (
         <div>
-          {/* Result count */}
           {results && !loadingPosts && (
             <p style={{
               fontSize: "11px", color: "var(--text-dim)",
@@ -437,10 +514,15 @@ export default function NarrativeDivergence() {
               <span style={{ color: "var(--text-sec)" }}>
                 {'"' + lastQuery + '"'}
               </span>
+              {sidebarBloc && (
+                <span style={{ color: sidebarBlocColor, marginLeft: "6px" }}>
+                  {"· " + (BLOC_LABEL[sidebarBloc] || sidebarBloc) + " highlighted"}
+                </span>
+              )}
             </p>
           )}
 
-          {/* 4-column grid */}
+          {/* 4-column grid — pass highlighted prop */}
           <div style={{
             display: "grid",
             gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
@@ -452,8 +534,10 @@ export default function NarrativeDivergence() {
                   key={b.key}
                   bloc={b.key}
                   label={b.label}
-                  posts={results && results.divergence ? results.divergence[b.key] : null}
+                  posts={results && results.divergence
+                    ? results.divergence[b.key] : null}
                   loading={loadingPosts}
+                  highlighted={sidebarBloc === b.key}
                 />
               )
             })}
@@ -463,8 +547,10 @@ export default function NarrativeDivergence() {
         </div>
       )}
 
-      {/* ── Pre-search bloc preview ── */}
-      {!results && !loadingPosts && <BlocPreview />}
+      {/* ── Pre-search bloc preview — pass sidebarBloc ── */}
+      {!results && !loadingPosts && (
+        <BlocPreview sidebarBloc={sidebarBloc} />
+      )}
 
     </section>
   )
