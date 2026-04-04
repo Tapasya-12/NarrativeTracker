@@ -5,10 +5,14 @@ import NarrativeDivergence from "./components/NarrativeDivergence"
 import VelocityChart from "./components/VelocityChart"
 import SearchPanel from "./components/SearchPanel"
 import TimeSeriesChart from "./components/TimeSeriesChart"
-import ClusterView from "./components/ClusterView"
+import { useVisible } from "./hooks/useVisible"
 
 const NetworkGraph = lazy(function() {
   return import("./components/NetworkGraph")
+})
+
+const ClusterView = lazy(function() {
+  return import("./components/ClusterView")
 })
 
 export const BLOC_COLORS = {
@@ -20,17 +24,39 @@ export const BLOC_COLORS = {
 }
 
 const BLOCS = [
-  { label: "Left Radical", color: "#f87171", tag: "r/Anarchism · r/socialism"           },
-  { label: "Center Left",  color: "#4f8ef7", tag: "r/politics · r/Liberal · r/neoliberal"},
-  { label: "Right",        color: "#fb923c", tag: "r/Conservative · r/Republican"        },
-  { label: "Mixed",        color: "#c084fc", tag: "r/worldpolitics"                      },
+  { label: "Left Radical", color: "#f87171", tag: "r/Anarchism · r/socialism"            },
+  { label: "Center Left",  color: "#4f8ef7", tag: "r/politics · r/Liberal · r/neoliberal" },
+  { label: "Right",        color: "#fb923c", tag: "r/Conservative · r/Republican"         },
+  { label: "Mixed",        color: "#c084fc", tag: "r/worldpolitics"                       },
 ]
 
-function NetworkFallback() {
+// ── Skeleton fallbacks ────────────────────────────────────────────────────────
+function SectionSkeleton({ title, height }) {
   return (
     <div className="section">
-      <p className="sec-title" style={{ marginBottom: "20px" }}>Network Analysis</p>
-      <div className="skeleton" style={{ height: "420px" }} />
+      {title && (
+        <p className="sec-title" style={{ marginBottom: "20px" }}>{title}</p>
+      )}
+      <div
+        className="skeleton"
+        style={{ height: height || "300px", borderRadius: "var(--r-md)" }}
+      />
+    </div>
+  )
+}
+
+// ── LazySection — only mounts children when scrolled near ────────────────────
+function LazySection({ children, fallback }) {
+  var result = useVisible("350px")
+  var ref     = result[0]
+  var visible = result[1]
+
+  return (
+    <div ref={ref}>
+      {visible
+        ? children
+        : (fallback || <SectionSkeleton height="300px" />)
+      }
     </div>
   )
 }
@@ -65,8 +91,6 @@ export default function App() {
           borderBottom: "1px solid var(--border)",
           paddingBottom: "28px",
         }}>
-
-          {/* Title + dataset info row */}
           <div style={{
             display: "flex",
             alignItems: "flex-start",
@@ -97,7 +121,6 @@ export default function App() {
               </p>
             </div>
 
-            {/* Dataset meta */}
             <div style={{
               display: "flex",
               flexDirection: "column",
@@ -123,12 +146,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* Bloc legend pills */}
-          <div style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "8px",
-          }}>
+          {/* Bloc pills */}
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
             {BLOCS.map(function(b) {
               return (
                 <div key={b.label} style={{
@@ -162,40 +181,54 @@ export default function App() {
           </div>
         </div>
 
-        {/* ── Stats ── */}
+        {/* ── Stats — always visible, loads immediately ── */}
         <StatBar />
 
-        {/* ── Narrative Divergence ── */}
+        {/* ── Narrative Divergence — always visible ── */}
         <div className="section fade-up">
           <NarrativeDivergence />
         </div>
 
-        {/* ── Information Velocity ── */}
+        {/* ── Information Velocity — always visible ── */}
         <div className="section fade-up">
           <VelocityChart />
         </div>
 
-        {/* ── Semantic Search ── */}
+        {/* ── Semantic Search — always visible ── */}
         <div className="section fade-up">
           <SearchPanel />
         </div>
 
-        {/* ── Time Series ── */}
-        <div className="section fade-up">
-          <TimeSeriesChart filters={filters} />
-        </div>
-
-        {/* ── Network Graph (lazy) ── */}
-        <Suspense fallback={<NetworkFallback />}>
+        {/* ── Time Series — lazy: only fetches when scrolled near ── */}
+        <LazySection
+          fallback={<SectionSkeleton title="Post Activity Over Time" height="360px" />}
+        >
           <div className="section fade-up">
-            <NetworkGraph filters={filters} />
+            <TimeSeriesChart filters={filters} />
           </div>
-        </Suspense>
+        </LazySection>
 
-        {/* ── Cluster View ── */}
-        <div className="section fade-up">
-          <ClusterView />
-        </div>
+        {/* ── Network Graph — lazy loaded + deferred fetch ── */}
+        <LazySection
+          fallback={<SectionSkeleton title="Network Analysis" height="460px" />}
+        >
+          <Suspense fallback={<SectionSkeleton title="Network Analysis" height="460px" />}>
+            <div className="section fade-up">
+              <NetworkGraph filters={filters} />
+            </div>
+          </Suspense>
+        </LazySection>
+
+        {/* ── Cluster View — lazy loaded + deferred fetch ── */}
+        <LazySection
+          fallback={<SectionSkeleton title="Topic Clusters" height="440px" />}
+        >
+          <Suspense fallback={<SectionSkeleton title="Topic Clusters" height="440px" />}>
+            <div className="section fade-up">
+              <ClusterView />
+            </div>
+          </Suspense>
+        </LazySection>
 
         {/* ── Footer ── */}
         <div style={{
@@ -207,16 +240,10 @@ export default function App() {
           flexWrap: "wrap",
           gap: "8px",
         }}>
-          <p className="mono" style={{
-            fontSize: "11px",
-            color: "var(--text-dim)",
-          }}>
+          <p className="mono" style={{ fontSize: "11px", color: "var(--text-dim)" }}>
             NarrativeTracker
           </p>
-          <p className="mono" style={{
-            fontSize: "11px",
-            color: "var(--text-dim)",
-          }}>
+          <p className="mono" style={{ fontSize: "11px", color: "var(--text-dim)" }}>
             Built for SimPPL · 8,799 posts · 10 communities
           </p>
         </div>
