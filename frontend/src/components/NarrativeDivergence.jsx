@@ -19,125 +19,146 @@ const EXAMPLE_QUERIES = [
   "democratic institutions",
 ]
 
-// ── Single post card ──────────────────────────────────────────────────────────
+// ── Post card ─────────────────────────────────────────────────────────────────
 function PostCard({ post, bloc }) {
-  const color = BLOC_COLORS[bloc] || "#6b7280"
+  const color      = BLOC_COLORS[bloc] || "#6b7280"
   const similarity = Math.round((post.similarity || 0) * 100)
-  const date = post.created_utc?.slice(0, 10)
-  const redditUrl = "https://reddit.com" + (post.permalink || "")
-
-  const cardStyle = {
-    background: "rgba(255,255,255,0.04)",
-    border: "1px solid rgba(255,255,255,0.07)",
-    borderRadius: "8px",
-    display: "block",
-    padding: "12px",
-    marginBottom: "8px",
-    textDecoration: "none",
-    transition: "background 0.15s",
-  }
-
-  const badgeStyle = {
-    background: color + "33",
-    border: "1px solid " + color + "55",
-    borderRadius: "4px",
-    padding: "2px 6px",
-    fontSize: "11px",
-    fontWeight: "500",
-    color: "white",
-  }
-
-  const simStyle = {
-    color: color,
-    fontSize: "11px",
-    fontWeight: "600",
-    marginLeft: "auto",
-  }
+  const date       = post.created_utc ? post.created_utc.slice(0, 10) : ""
+  const href       = "https://reddit.com" + (post.permalink || "")
 
   return (
-    <a href={redditUrl} target="_blank" rel="noreferrer" style={cardStyle}>
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="nd-card"
+      style={{ display: "block", textDecoration: "none", marginBottom: "8px" }}
+    >
+      {/* Title */}
       <p style={{
-        fontSize: "13px",
-        color: "#e5e7eb",
-        lineHeight: "1.4",
-        marginBottom: "8px",
+        fontSize: "12px",
+        color: "var(--text-primary)",
+        lineHeight: "1.55",
+        marginBottom: "10px",
         display: "-webkit-box",
         WebkitLineClamp: 3,
         WebkitBoxOrient: "vertical",
         overflow: "hidden",
+        wordBreak: "break-word",
       }}>
         {post.title}
       </p>
 
-      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "6px" }}>
-        <span style={badgeStyle}>r/{post.subreddit}</span>
+      {/* Meta row */}
+      <div style={{
+        display: "flex",
+        flexWrap: "wrap",
+        alignItems: "center",
+        gap: "6px",
+      }}>
+        <span style={{
+          fontSize: "10px", fontWeight: "600",
+          color: color,
+          background: color + "18",
+          border: "1px solid " + color + "35",
+          borderRadius: "4px",
+          padding: "2px 7px",
+          whiteSpace: "nowrap",
+        }}>
+          {"r/" + post.subreddit}
+        </span>
 
         {post.score > 0 && (
-          <span style={{ fontSize: "11px", color: "#6b7280" }}>
-            ↑ {post.score.toLocaleString()}
+          <span style={{ fontSize: "10px", color: "var(--text-dim)" }}>
+            {"↑ " + post.score.toLocaleString()}
           </span>
         )}
 
         {date && (
-          <span style={{ fontSize: "11px", color: "#4b5563" }}>{date}</span>
+          <span style={{ fontSize: "10px", color: "var(--text-dim)" }}>
+            {date}
+          </span>
         )}
 
-        <span style={simStyle}>{similarity}% match</span>
+        <span style={{
+          fontSize: "10px", fontWeight: "700",
+          color: color, marginLeft: "auto",
+          whiteSpace: "nowrap",
+        }}>
+          {similarity + "% match"}
+        </span>
       </div>
     </a>
   )
 }
 
-// ── One bloc column ───────────────────────────────────────────────────────────
+// ── Bloc column ───────────────────────────────────────────────────────────────
 function BlocColumn({ bloc, label, posts, loading }) {
   const color = BLOC_COLORS[bloc] || "#6b7280"
 
   return (
-    <div style={{ minWidth: 0 }}>
+    <div style={{ minWidth: 0, display: "flex", flexDirection: "column" }}>
+
+      {/* Column header */}
       <div style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "8px",
+        display: "flex", alignItems: "center", gap: "7px",
+        paddingBottom: "10px",
         marginBottom: "12px",
-        paddingBottom: "8px",
         borderBottom: "2px solid " + color,
       }}>
         <div style={{
-          width: "10px", height: "10px",
-          borderRadius: "50%",
-          background: color,
-          flexShrink: 0,
+          width: "8px", height: "8px", borderRadius: "50%",
+          background: color, flexShrink: 0,
         }} />
-        <h3 style={{ fontSize: "13px", fontWeight: "600", color: "#e5e7eb" }}>
+        <p style={{
+          fontSize: "12px", fontWeight: "700",
+          color: "var(--text-primary)",
+          letterSpacing: "0.01em",
+        }}>
           {label}
-        </h3>
+        </p>
       </div>
 
+      {/* Loading skeletons */}
       {loading && (
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          {[1, 2, 3].map(i => (
-            <div key={i} style={{
-              height: "80px", background: "#1f2937",
-              borderRadius: "8px", animation: "pulse 2s infinite",
-            }} />
-          ))}
+          {[90, 80, 85].map(function(h, i) {
+            return (
+              <div
+                key={i}
+                className="skeleton"
+                style={{ height: h + "px", borderRadius: "8px" }}
+              />
+            )
+          })}
         </div>
       )}
 
+      {/* Posts */}
       {!loading && posts && posts.length > 0 &&
-        posts.map((p, i) => <PostCard key={i} post={p} bloc={bloc} />)
+        posts.map(function(p, i) {
+          return <PostCard key={i} post={p} bloc={bloc} />
+        })
       }
 
+      {/* Empty state */}
       {!loading && (!posts || posts.length === 0) && (
         <div style={{
-          padding: "24px 12px",
-          textAlign: "center",
+          flex: 1, minHeight: "100px",
+          display: "flex", alignItems: "center",
+          justifyContent: "center",
           background: "rgba(255,255,255,0.02)",
-          border: "1px dashed rgba(255,255,255,0.08)",
+          border: "1px dashed rgba(255,255,255,0.06)",
           borderRadius: "8px",
+          padding: "20px 12px",
         }}>
-          <p style={{ fontSize: "12px", color: "#4b5563" }}>
-            No relevant posts found in this community
+          <p style={{
+            fontSize: "11px",
+            color: "var(--text-dim)",
+            textAlign: "center",
+            lineHeight: "1.5",
+          }}>
+            No relevant posts in this community
           </p>
         </div>
       )}
@@ -145,46 +166,100 @@ function BlocColumn({ bloc, label, posts, loading }) {
   )
 }
 
-// ── AI Framing Analysis box ───────────────────────────────────────────────────
+// ── Framing analysis ──────────────────────────────────────────────────────────
 function FramingAnalysis({ analysis, loading }) {
   if (!loading && !analysis) return null
 
   return (
     <div style={{
-      marginTop: "20px",
-      padding: "16px",
-      background: "rgba(59,130,246,0.06)",
-      border: "1px solid rgba(59,130,246,0.2)",
-      borderLeft: "4px solid #3b82f6",
-      borderRadius: "8px",
+      marginTop: "24px",
+      padding: "20px 22px",
+      background: "rgba(79,142,247,0.04)",
+      border: "1px solid rgba(79,142,247,0.12)",
+      borderLeft: "3px solid #4f8ef7",
+      borderRadius: "10px",
     }}>
       <p style={{
-        fontSize: "11px",
-        fontWeight: "700",
-        color: "#60a5fa",
-        textTransform: "uppercase",
-        letterSpacing: "0.08em",
-        marginBottom: "8px",
+        fontSize: "9px", fontWeight: "700",
+        color: "#4f8ef7",
+        textTransform: "uppercase", letterSpacing: "0.12em",
+        marginBottom: "12px",
       }}>
         AI Framing Analysis
       </p>
 
       {loading ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-          {[100, 83, 66].map((w, i) => (
-            <div key={i} style={{
-              height: "12px",
-              width: w + "%",
-              background: "#374151",
-              borderRadius: "4px",
-            }} />
-          ))}
+        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          {[100, 88, 70].map(function(w, i) {
+            return (
+              <div
+                key={i}
+                className="skeleton"
+                style={{ height: "11px", width: w + "%", borderRadius: "4px" }}
+              />
+            )
+          })}
         </div>
       ) : (
-        <p style={{ fontSize: "14px", color: "#d1d5db", lineHeight: "1.6" }}>
+        <p style={{
+          fontSize: "13px",
+          color: "var(--text-sec)",
+          lineHeight: "1.7",
+          maxWidth: "860px",
+          wordBreak: "break-word",
+        }}>
           {analysis}
         </p>
       )}
+    </div>
+  )
+}
+
+// ── Pre-search bloc preview ───────────────────────────────────────────────────
+function BlocPreview() {
+  const SUB_LABELS = {
+    left_radical: "r/Anarchism · r/socialism",
+    center_left:  "r/Liberal · r/politics · r/neoliberal",
+    right:        "r/Conservative · r/Republican",
+    mixed:        "r/worldpolitics",
+  }
+
+  return (
+    <div style={{
+      display: "grid",
+      gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+      gap: "10px",
+      marginTop: "20px",
+    }}>
+      {BLOCS.map(function(b) {
+        const color = BLOC_COLORS[b.key] || "#6b7280"
+        return (
+          <div key={b.key} style={{
+            padding: "14px 12px",
+            background: color + "0c",
+            border: "1px solid " + color + "22",
+            borderTop: "2px solid " + color,
+            borderRadius: "10px",
+            textAlign: "center",
+          }}>
+            <p style={{
+              fontSize: "11px", fontWeight: "700",
+              color: color, marginBottom: "6px",
+              letterSpacing: "0.02em",
+            }}>
+              {b.label}
+            </p>
+            <p style={{
+              fontSize: "10px",
+              color: "var(--text-dim)",
+              lineHeight: "1.5",
+              wordBreak: "break-word",
+            }}>
+              {SUB_LABELS[b.key]}
+            </p>
+          </div>
+        )
+      })}
     </div>
   )
 }
@@ -202,25 +277,19 @@ export default function NarrativeDivergence() {
   const handleSearch = async () => {
     const q = query.trim()
     if (!q || q.length < 2) return
-
     setLoadingPosts(true)
     setLoadingAI(true)
     setResults(null)
     setAnalysis("")
     setError(null)
     setLastQuery(q)
-
     try {
-      const divRes = await axios.get(BASE + "/api/narrative_divergence", {
-        params: { q },
-      })
+      const divRes = await axios.get(BASE + "/api/narrative_divergence", { params: { q } })
       setResults(divRes.data)
       setLoadingPosts(false)
-
       try {
         const anaRes = await axios.post(BASE + "/api/narrative_analysis", {
-          query: q,
-          blocs: divRes.data.divergence,
+          query: q, blocs: divRes.data.divergence,
         })
         setAnalysis(anaRes.data.analysis)
       } catch {
@@ -228,7 +297,6 @@ export default function NarrativeDivergence() {
       } finally {
         setLoadingAI(false)
       }
-
     } catch (e) {
       setError("Search failed — check that the backend is running.")
       setLoadingPosts(false)
@@ -236,133 +304,168 @@ export default function NarrativeDivergence() {
     }
   }
 
-  const handleExampleClick = (exQuery) => {
+  const handleExampleClick = function(exQuery) {
     setQuery(exQuery)
     setTimeout(handleSearch, 50)
   }
 
   return (
-    <section className="w-full">
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-200">
-          Narrative Divergence Tracker
-        </h2>
-        <p className="text-gray-500 text-sm mt-1">
-          See how Left Radical, Center Left, Right, and Mixed communities frame
-          the same topic differently — with AI analysis of the framing gaps.
+    <section style={{ width: "100%" }}>
+      <style>{`
+        .nd-card {
+          background: rgba(255,255,255,0.03);
+          border: 1px solid rgba(255,255,255,0.07);
+          border-radius: 8px;
+          padding: 12px 14px;
+          transition: background 0.15s, transform 0.15s;
+        }
+        .nd-card:hover {
+          background: rgba(255,255,255,0.055);
+          transform: translateY(-1px);
+        }
+        .nd-chip {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 999px;
+          padding: 4px 12px;
+          font-size: 11px;
+          color: var(--text-sec, #94a3b8);
+          cursor: pointer;
+          transition: background 0.15s, color 0.15s;
+          font-family: inherit;
+          white-space: nowrap;
+        }
+        .nd-chip:hover {
+          background: rgba(255,255,255,0.08);
+          color: var(--text-primary, #f1f5f9);
+        }
+      `}</style>
+
+      {/* ── Section header ── */}
+      <div style={{ marginBottom: "22px" }}>
+        <p className="sec-title">Narrative Divergence Tracker</p>
+        <p className="sec-desc">
+          See how Left Radical, Center Left, Right, and Mixed communities frame the same topic differently — with AI analysis of the framing gaps.
         </p>
       </div>
 
-      {/* Search input */}
-      <div className="flex gap-2 mb-3">
+      {/* ── Search input ── */}
+      <div style={{ display: "flex", gap: "10px", marginBottom: "14px" }}>
         <input
           value={query}
-          onChange={e => setQuery(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && handleSearch()}
+          onChange={function(e) { setQuery(e.target.value) }}
+          onKeyDown={function(e) { if (e.key === "Enter") handleSearch() }}
           placeholder='Try "federal workers fired" or "immigration policy"...'
-          className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5
-            text-white placeholder-gray-500 text-sm focus:outline-none
-            focus:border-blue-500 transition-colors"
+          className="input"
+          style={{ flex: 1 }}
         />
         <button
           onClick={handleSearch}
           disabled={loadingPosts || query.trim().length < 2}
-          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700
-            disabled:text-gray-500 rounded-lg text-sm font-semibold
-            transition-colors whitespace-nowrap"
+          className="btn btn-blue"
         >
           {loadingPosts ? "Searching..." : "Analyse"}
         </button>
       </div>
 
-      {/* Short query warning */}
+      {/* ── Short query warning ── */}
       {query.length > 0 && query.trim().length < 2 && (
-        <p className="text-yellow-500 text-xs mb-3">
+        <p style={{
+          fontSize: "11px", color: "#fbbf24",
+          marginBottom: "12px",
+        }}>
           Please enter at least 2 characters
         </p>
       )}
 
-      {/* Example chips */}
+      {/* ── Example chips ── */}
       {!results && !loadingPosts && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          <span className="text-xs text-gray-600 self-center">Try:</span>
-          {EXAMPLE_QUERIES.map(q => (
-            <button
-              key={q}
-              onClick={() => handleExampleClick(q)}
-              className="px-3 py-1 bg-gray-800 hover:bg-gray-700 border border-gray-700
-                rounded-full text-xs text-gray-400 hover:text-gray-200 transition-colors"
-            >
-              {q}
-            </button>
-          ))}
+        <div style={{
+          display: "flex", flexWrap: "wrap",
+          alignItems: "center", gap: "8px",
+          marginBottom: "24px",
+        }}>
+          <span style={{
+            fontSize: "10px", fontWeight: "600",
+            color: "var(--text-dim)",
+            textTransform: "uppercase", letterSpacing: "0.08em",
+          }}>
+            Try
+          </span>
+          {EXAMPLE_QUERIES.map(function(q) {
+            return (
+              <button
+                key={q}
+                onClick={function() { handleExampleClick(q) }}
+                className="nd-chip"
+              >
+                {q}
+              </button>
+            )
+          })}
         </div>
       )}
 
-      {/* Error */}
+      {/* ── Error ── */}
       {error && (
-        <div className="p-3 bg-red-950 border border-red-700 rounded-lg
-          text-red-300 text-sm mb-4">
+        <div style={{
+          padding: "12px 16px",
+          background: "rgba(248,113,113,0.06)",
+          border: "1px solid rgba(248,113,113,0.2)",
+          borderLeft: "3px solid #f87171",
+          borderRadius: "8px",
+          fontSize: "13px", color: "#fca5a5",
+          marginBottom: "16px",
+        }}>
           {error}
         </div>
       )}
 
-      {/* Results */}
+      {/* ── Results ── */}
       {(results || loadingPosts) && (
-        <>
+        <div>
+          {/* Result count */}
           {results && !loadingPosts && (
-            <p className="text-xs text-gray-500 mb-4">
-              {results.total_relevant || 0} relevant posts found for{" "}
-              <strong className="text-gray-300">"{lastQuery}"</strong>
+            <p style={{
+              fontSize: "11px", color: "var(--text-dim)",
+              marginBottom: "16px",
+            }}>
+              <span style={{ color: "var(--text-primary)", fontWeight: "600" }}>
+                {results.total_relevant || 0}
+              </span>
+              {" relevant posts found for "}
+              <span style={{ color: "var(--text-sec)" }}>
+                {'"' + lastQuery + '"'}
+              </span>
             </p>
           )}
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {BLOCS.map(({ key, label }) => (
-              <BlocColumn
-                key={key}
-                bloc={key}
-                label={label}
-                posts={results?.divergence?.[key]}
-                loading={loadingPosts}
-              />
-            ))}
+          {/* 4-column grid */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+            gap: "16px",
+          }}>
+            {BLOCS.map(function(b) {
+              return (
+                <BlocColumn
+                  key={b.key}
+                  bloc={b.key}
+                  label={b.label}
+                  posts={results && results.divergence ? results.divergence[b.key] : null}
+                  loading={loadingPosts}
+                />
+              )
+            })}
           </div>
 
           <FramingAnalysis analysis={analysis} loading={loadingAI} />
-        </>
-      )}
-
-      {/* Pre-search bloc preview */}
-      {!results && !loadingPosts && (
-        <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {BLOCS.map(({ key, label }) => (
-            <div
-              key={key}
-              className="p-3 rounded-lg text-center"
-              style={{
-                background: BLOC_COLORS[key] + "10",
-                border: "1px solid " + BLOC_COLORS[key] + "25",
-              }}
-            >
-              <div
-                className="w-3 h-3 rounded-full mx-auto mb-2"
-                style={{ background: BLOC_COLORS[key] }}
-              />
-              <p className="text-xs font-semibold mb-1"
-                style={{ color: BLOC_COLORS[key] }}>
-                {label}
-              </p>
-              <p className="text-xs text-gray-600">
-                {key === "left_radical" && "r/Anarchism · r/socialism"}
-                {key === "center_left"  && "r/Liberal · r/politics · r/neoliberal"}
-                {key === "right"        && "r/Conservative · r/Republican"}
-                {key === "mixed"        && "r/worldpolitics"}
-              </p>
-            </div>
-          ))}
         </div>
       )}
+
+      {/* ── Pre-search bloc preview ── */}
+      {!results && !loadingPosts && <BlocPreview />}
+
     </section>
   )
 }

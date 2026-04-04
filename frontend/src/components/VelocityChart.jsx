@@ -16,7 +16,6 @@ const EXAMPLE_QUERIES = [
   "FAA staffing crisis",
 ]
 
-// ── helpers ───────────────────────────────────────────────────────────────────
 function getBlocForSub(subreddit) {
   const map = {
     Anarchism: "left_radical", socialism: "left_radical",
@@ -36,68 +35,94 @@ function getSubColor(subreddit) {
 // ── First mover badge ─────────────────────────────────────────────────────────
 function FirstMoverBadge({ firstMover, firstPosts }) {
   if (!firstMover) return null
-  const fp   = firstPosts[0] || {}
+  const fp    = firstPosts[0] || {}
   const color = getSubColor(firstMover)
   const date  = fp.created_utc ? fp.created_utc.slice(0, 10) : ""
 
   return (
     <div style={{
-      display: "flex",
-      alignItems: "flex-start",
-      gap: "16px",
-      padding: "16px",
-      background: "rgba(255,255,255,0.03)",
-      border: "1px solid rgba(255,255,255,0.08)",
+      display: "flex", alignItems: "flex-start", gap: "16px",
+      padding: "20px 22px",
+      background: color + "08",
+      border: "1px solid " + color + "25",
+      borderLeft: "3px solid " + color,
       borderRadius: "10px",
       marginBottom: "20px",
     }}>
-      {/* Circle badge */}
+      {/* Circle */}
       <div style={{
-        width: "52px", height: "52px",
-        borderRadius: "50%",
-        background: color,
+        width: "52px", height: "52px", borderRadius: "50%",
+        background: color + "20",
+        border: "2px solid " + color + "50",
         display: "flex", alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-        flexDirection: "column",
+        justifyContent: "center", flexShrink: 0,
+        flexDirection: "column", gap: "1px",
       }}>
-        <span style={{ color: "white", fontSize: "9px", fontWeight: "700", lineHeight: 1 }}>
+        <span className="mono" style={{
+          color: color, fontSize: "9px", fontWeight: "700",
+          letterSpacing: "0.06em", lineHeight: 1,
+        }}>
           1ST
         </span>
-        <span style={{ color: "white", fontSize: "8px", opacity: 0.8, lineHeight: 1 }}>
+        <span style={{
+          color: color, fontSize: "7px", opacity: 0.7,
+          letterSpacing: "0.06em", lineHeight: 1,
+        }}>
           MOVER
         </span>
       </div>
 
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: "11px", color: "#6b7280", textTransform: "uppercase",
-          letterSpacing: "0.06em", marginBottom: "2px" }}>
+        <p style={{
+          fontSize: "9px", fontWeight: "600",
+          color: "var(--text-dim)",
+          textTransform: "uppercase", letterSpacing: "0.1em",
+          marginBottom: "5px",
+        }}>
           First Community to Post
         </p>
-        <p style={{ fontSize: "18px", fontWeight: "700", color: color, marginBottom: "4px" }}>
+        <p style={{
+          fontSize: "20px", fontWeight: "700",
+          color: color, letterSpacing: "-0.3px",
+          marginBottom: "5px", lineHeight: 1,
+        }}>
           {"r/" + firstMover}
         </p>
-        {date !== "" && (
-          <p style={{ fontSize: "12px", color: "#9ca3af", marginBottom: "4px" }}>
+        {date && (
+          <p className="mono" style={{
+            fontSize: "11px", color: "var(--text-sec)",
+            marginBottom: "6px",
+          }}>
             {date}
           </p>
         )}
         {fp.title && (
           <p style={{
-            fontSize: "12px", color: "#6b7280",
-            overflow: "hidden", display: "-webkit-box",
-            WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
+            fontSize: "12px", color: "var(--text-dim)",
+            lineHeight: "1.5",
+            display: "-webkit-box",
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            wordBreak: "break-word",
           }}>
             {fp.title}
           </p>
         )}
       </div>
 
-      {/* Similarity */}
       {fp.similarity != null && (
         <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <p style={{ fontSize: "11px", color: "#6b7280" }}>relevance</p>
-          <p style={{ fontSize: "20px", fontWeight: "700", color: color }}>
+          <p style={{
+            fontSize: "9px", color: "var(--text-dim)",
+            textTransform: "uppercase", letterSpacing: "0.1em",
+            marginBottom: "4px",
+          }}>
+            Relevance
+          </p>
+          <p className="mono" style={{
+            fontSize: "22px", fontWeight: "700", color: color,
+          }}>
             {Math.round(fp.similarity * 100) + "%"}
           </p>
         </div>
@@ -106,53 +131,73 @@ function FirstMoverBadge({ firstMover, firstPosts }) {
   )
 }
 
-// ── Propagation order list ────────────────────────────────────────────────────
+// ── Propagation order ─────────────────────────────────────────────────────────
 function PropagationOrder({ firstPosts }) {
   if (!firstPosts || firstPosts.length < 2) return null
 
   return (
-    <div style={{ marginBottom: "20px" }}>
-      <p style={{ fontSize: "11px", color: "#6b7280", textTransform: "uppercase",
-        letterSpacing: "0.06em", marginBottom: "10px" }}>
+    <div style={{ marginBottom: "24px" }}>
+      <p style={{
+        fontSize: "9px", fontWeight: "600",
+        color: "var(--text-dim)",
+        textTransform: "uppercase", letterSpacing: "0.1em",
+        marginBottom: "12px",
+      }}>
         Propagation Order
       </p>
+
       <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-        {firstPosts.map((fp, idx) => {
+        {firstPosts.map(function(fp, idx) {
           const color = getSubColor(fp.subreddit)
           const date  = fp.created_utc ? fp.created_utc.slice(0, 10) : ""
+          const isFirst = idx === 0
+
           return (
             <div key={fp.subreddit} style={{
-              display: "flex", alignItems: "center", gap: "10px",
-              padding: "8px 12px",
-              background: "rgba(255,255,255,0.02)",
-              borderRadius: "6px",
+              display: "flex", alignItems: "center", gap: "12px",
+              padding: "10px 14px",
+              background: isFirst ? color + "08" : "var(--bg-card)",
+              border: "1px solid " + (isFirst ? color + "25" : "var(--border)"),
               borderLeft: "3px solid " + color,
+              borderRadius: "8px",
             }}>
-              <span style={{
-                width: "22px", height: "22px", borderRadius: "50%",
-                background: color + "30", color: color,
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "11px", fontWeight: "700", flexShrink: 0,
+              {/* Number badge */}
+              <span className="mono" style={{
+                width: "24px", height: "24px",
+                borderRadius: "50%",
+                background: color + "20",
+                border: "1px solid " + color + "40",
+                color: color,
+                display: "flex", alignItems: "center",
+                justifyContent: "center",
+                fontSize: "11px", fontWeight: "700",
+                flexShrink: 0,
               }}>
                 {idx + 1}
               </span>
-              <span style={{ fontSize: "13px", fontWeight: "600", color: color }}>
+
+              <span style={{
+                fontSize: "13px", fontWeight: "600",
+                color: color, minWidth: "120px",
+              }}>
                 {"r/" + fp.subreddit}
               </span>
-              <span style={{ fontSize: "11px", color: "#6b7280" }}>{date}</span>
-              {idx === 0 && (
-                <span style={{
-                  marginLeft: "auto", fontSize: "10px", color: "#fbbf24",
-                  fontWeight: "600",
-                }}>
-                  ★ FIRST
-                </span>
-              )}
-              {idx > 0 && (
-                <span style={{ marginLeft: "auto", fontSize: "10px", color: "#4b5563" }}>
-                  {"+" + idx + (idx === 1 ? " community" : " communities") + " later"}
-                </span>
-              )}
+
+              <span className="mono" style={{
+                fontSize: "11px", color: "var(--text-sec)",
+              }}>
+                {date}
+              </span>
+
+              <span style={{ marginLeft: "auto", fontSize: "10px",
+                fontWeight: "600",
+                color: isFirst ? "#fbbf24" : "var(--text-dim)",
+              }}>
+                {isFirst
+                  ? "★ First"
+                  : "+" + idx + (idx === 1 ? " community" : " communities") + " later"
+                }
+              </span>
             </div>
           )
         })}
@@ -161,28 +206,21 @@ function PropagationOrder({ firstPosts }) {
   )
 }
 
-// ── Mini timeline chart per subreddit ─────────────────────────────────────────
+// ── Mini timeline ─────────────────────────────────────────────────────────────
 function MiniTimeline({ subreddit, timelineData }) {
   const color = getSubColor(subreddit)
 
-  const tooltipStyle = {
-    background: "#1f2937",
-    border: "none",
-    borderRadius: "6px",
-    fontSize: "11px",
-    padding: "4px 8px",
-  }
-
   return (
     <div style={{
-      background: "rgba(255,255,255,0.02)",
-      border: "1px solid rgba(255,255,255,0.06)",
-      borderRadius: "8px",
-      padding: "10px 12px",
+      background: "var(--bg-card)",
+      border: "1px solid var(--border)",
+      borderTop: "2px solid " + color,
+      borderRadius: "10px",
+      padding: "12px 14px",
     }}>
       <p style={{
         fontSize: "12px", fontWeight: "600",
-        color: color, marginBottom: "8px",
+        color: color, marginBottom: "10px",
       }}>
         {"r/" + subreddit}
       </p>
@@ -191,9 +229,15 @@ function MiniTimeline({ subreddit, timelineData }) {
           <XAxis dataKey="date" hide />
           <YAxis hide />
           <Tooltip
-            contentStyle={tooltipStyle}
-            labelStyle={{ color: "#9ca3af" }}
-            formatter={v => [v, "posts"]}
+            contentStyle={{
+              background: "var(--bg-elevated, #0e1628)",
+              border: "1px solid var(--border)",
+              borderRadius: "6px",
+              fontSize: "11px",
+              padding: "4px 10px",
+            }}
+            labelStyle={{ color: "var(--text-sec)" }}
+            formatter={function(v) { return [v, "posts"] }}
           />
           <Line
             type="monotone"
@@ -220,12 +264,10 @@ export default function VelocityChart() {
   const handleSearch = async () => {
     const q = query.trim()
     if (!q || q.length < 2) return
-
     setLoading(true)
     setData(null)
     setError(null)
     setLastQ(q)
-
     try {
       const res = await axios.get(BASE + "/api/velocity", { params: { q } })
       setData(res.data)
@@ -236,157 +278,222 @@ export default function VelocityChart() {
     }
   }
 
-  const handleExample = (q) => {
+  const handleExample = function(q) {
     setQuery(q)
-    setTimeout(() => {
+    setTimeout(function() {
       document.getElementById("velocity-btn").click()
     }, 50)
   }
 
-  // Group timeline rows by subreddit
   const timelinesBySub = {}
   if (data && data.timeline) {
-    data.timeline.forEach(row => {
+    data.timeline.forEach(function(row) {
       if (!timelinesBySub[row.subreddit]) timelinesBySub[row.subreddit] = []
       timelinesBySub[row.subreddit].push({ date: row.date, count: row.count })
     })
   }
 
-  // Order subreddits by propagation order
   const orderedSubs = data && data.first_posts
     ? data.first_posts
-        .map(fp => fp.subreddit)
-        .filter(sub => timelinesBySub[sub] && timelinesBySub[sub].length > 0)
+        .map(function(fp) { return fp.subreddit })
+        .filter(function(sub) {
+          return timelinesBySub[sub] && timelinesBySub[sub].length > 0
+        })
     : []
 
   return (
-    <section className="w-full">
+    <section style={{ width: "100%" }}>
+      <style>{`
+        .vc-chip {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.08);
+          border-radius: 999px;
+          padding: 4px 12px;
+          font-size: 11px;
+          color: var(--text-sec, #94a3b8);
+          cursor: pointer;
+          transition: background 0.15s, color 0.15s;
+          font-family: inherit;
+          white-space: nowrap;
+        }
+        .vc-chip:hover {
+          background: rgba(255,255,255,0.08);
+          color: var(--text-primary, #f1f5f9);
+        }
+      `}</style>
 
-      {/* Header */}
-      <div className="mb-4">
-        <h2 className="text-lg font-semibold text-gray-200">
-          Information Velocity
-        </h2>
-        <p className="text-gray-500 text-sm mt-1">
+      {/* ── Header ── */}
+      <div style={{ marginBottom: "22px" }}>
+        <p className="sec-title">Information Velocity</p>
+        <p className="sec-desc">
           Which community posted about a topic first? Track how narratives
           spread across ideological communities over time.
         </p>
       </div>
 
-      {/* Search input */}
-      <div className="flex gap-2 mb-3">
+      {/* ── Search ── */}
+      <div style={{ display: "flex", gap: "10px", marginBottom: "14px" }}>
         <input
           value={query}
-          onChange={e => setQuery(e.target.value)}
-          onKeyDown={e => { if (e.key === "Enter") handleSearch() }}
+          onChange={function(e) { setQuery(e.target.value) }}
+          onKeyDown={function(e) { if (e.key === "Enter") handleSearch() }}
           placeholder="Search for a topic or event..."
-          className="flex-1 bg-gray-800 border border-gray-700 rounded-lg px-4 py-2.5
-            text-white placeholder-gray-500 text-sm focus:outline-none
-            focus:border-blue-500 transition-colors"
+          className="input"
+          style={{ flex: 1 }}
         />
         <button
           id="velocity-btn"
           onClick={handleSearch}
           disabled={loading || query.trim().length < 2}
-          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-700
-            disabled:text-gray-500 rounded-lg text-sm font-semibold
-            transition-colors whitespace-nowrap"
+          className="btn btn-blue"
         >
           {loading ? "Tracing..." : "Trace"}
         </button>
       </div>
 
-      {/* Example chips */}
+      {/* ── Example chips ── */}
       {!data && !loading && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          <span className="text-xs text-gray-600 self-center">Try:</span>
-          {EXAMPLE_QUERIES.map(q => (
-            <button
-              key={q}
-              onClick={() => handleExample(q)}
-              className="px-3 py-1 bg-gray-800 hover:bg-gray-700 border border-gray-700
-                rounded-full text-xs text-gray-400 hover:text-gray-200 transition-colors"
-            >
-              {q}
-            </button>
-          ))}
+        <div style={{
+          display: "flex", flexWrap: "wrap",
+          alignItems: "center", gap: "8px",
+          marginBottom: "24px",
+        }}>
+          <span style={{
+            fontSize: "10px", fontWeight: "600",
+            color: "var(--text-dim)",
+            textTransform: "uppercase", letterSpacing: "0.08em",
+          }}>
+            Try
+          </span>
+          {EXAMPLE_QUERIES.map(function(q) {
+            return (
+              <button
+                key={q}
+                onClick={function() { handleExample(q) }}
+                className="vc-chip"
+              >
+                {q}
+              </button>
+            )
+          })}
         </div>
       )}
 
-      {/* Error */}
+      {/* ── Error ── */}
       {error && (
-        <div className="p-3 bg-red-950 border border-red-700 rounded-lg
-          text-red-300 text-sm mb-4">
+        <div style={{
+          padding: "12px 16px",
+          background: "rgba(248,113,113,0.06)",
+          border: "1px solid rgba(248,113,113,0.2)",
+          borderLeft: "3px solid #f87171",
+          borderRadius: "8px",
+          fontSize: "13px", color: "#fca5a5",
+          marginBottom: "16px",
+        }}>
           {error}
         </div>
       )}
 
-      {/* Loading */}
+      {/* ── Loading ── */}
       {loading && (
-        <div className="space-y-3">
-          <div className="h-24 bg-gray-900 rounded-lg animate-pulse" />
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-            {[1, 2, 3, 4, 5, 6].map(i => (
-              <div key={i} className="h-24 bg-gray-900 rounded-lg animate-pulse" />
-            ))}
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <div className="skeleton" style={{ height: "100px", borderRadius: "10px" }} />
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+            gap: "10px",
+          }}>
+            {[1,2,3,4,5,6].map(function(i) {
+              return (
+                <div key={i} className="skeleton"
+                  style={{ height: "108px", borderRadius: "10px" }} />
+              )
+            })}
           </div>
         </div>
       )}
 
-      {/* No results */}
+      {/* ── No results ── */}
       {data && !loading && !data.first_mover && (
-        <div className="py-12 text-center">
-          <p className="text-gray-500 text-sm mb-1">
+        <div style={{
+          padding: "48px 24px", textAlign: "center",
+          background: "var(--bg-card)",
+          border: "1px solid var(--border)",
+          borderRadius: "10px",
+        }}>
+          <p style={{ fontSize: "13px", color: "var(--text-sec)", marginBottom: "4px" }}>
             No posts found for this query
           </p>
-          <p className="text-gray-700 text-xs">
+          <p style={{ fontSize: "11px", color: "var(--text-dim)" }}>
             Try a broader term or check the spelling
           </p>
         </div>
       )}
 
-      {/* Results */}
+      {/* ── Results ── */}
       {data && data.first_mover && !loading && (
         <div>
-          {/* Stats strip */}
-          <div className="flex flex-wrap gap-4 mb-4 text-xs text-gray-500">
-            <span>
-              Query: <strong className="text-gray-300">"{lastQ}"</strong>
-            </span>
-            <span>
-              <strong className="text-gray-300">{data.total}</strong> relevant posts
-            </span>
-            <span>
-              <strong className="text-gray-300">{orderedSubs.length}</strong> communities
-            </span>
+          {/* Stats badges */}
+          <div style={{
+            display: "flex", flexWrap: "wrap",
+            gap: "6px", marginBottom: "16px",
+          }}>
+            {[
+              { label: "Query", value: '"' + lastQ + '"' },
+              { label: "Posts", value: String(data.total) },
+              { label: "Communities", value: String(orderedSubs.length) },
+            ].map(function(item) {
+              return (
+                <div key={item.label} style={{
+                  display: "flex", alignItems: "center", gap: "5px",
+                  padding: "4px 10px",
+                  background: "var(--bg-card)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "999px",
+                  fontSize: "11px",
+                }}>
+                  <span style={{ color: "var(--text-dim)" }}>{item.label + ":"}</span>
+                  <span className="mono" style={{
+                    color: "var(--text-primary)", fontWeight: "600",
+                  }}>
+                    {item.value}
+                  </span>
+                </div>
+              )
+            })}
           </div>
 
-          {/* First mover badge */}
           <FirstMoverBadge
             firstMover={data.first_mover}
             firstPosts={data.first_posts || []}
           />
 
-          {/* Propagation order */}
           <PropagationOrder firstPosts={data.first_posts || []} />
 
-          {/* Timeline grid */}
+          {/* Timeline section label */}
           <p style={{
-            fontSize: "11px", color: "#6b7280",
-            textTransform: "uppercase", letterSpacing: "0.06em",
-            marginBottom: "10px",
+            fontSize: "9px", fontWeight: "600",
+            color: "var(--text-dim)",
+            textTransform: "uppercase", letterSpacing: "0.1em",
+            marginBottom: "12px",
           }}>
             Daily Post Volume — Ordered by First Appearance
           </p>
 
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
-            {orderedSubs.map(sub => (
-              <MiniTimeline
-                key={sub}
-                subreddit={sub}
-                timelineData={timelinesBySub[sub]}
-              />
-            ))}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
+            gap: "10px",
+          }}>
+            {orderedSubs.map(function(sub) {
+              return (
+                <MiniTimeline
+                  key={sub}
+                  subreddit={sub}
+                  timelineData={timelinesBySub[sub]}
+                />
+              )
+            })}
           </div>
         </div>
       )}

@@ -3,68 +3,93 @@ import { ScatterChart, Scatter, XAxis, YAxis, Tooltip, Cell } from "recharts"
 import { useApi } from "../hooks/useApi"
 
 const CLUSTER_COLORS = [
-  "#3b82f6","#ef4444","#f97316","#10b981","#a855f7",
-  "#f59e0b","#06b6d4","#ec4899","#84cc16","#6366f1",
-  "#14b8a6","#f43f5e","#8b5cf6","#22d3ee","#fb923c",
-  "#a3e635","#e879f9","#34d399","#fb7185","#60a5fa",
+  "#4f8ef7","#f87171","#fb923c","#34d399","#c084fc",
+  "#fbbf24","#22d3ee","#f472b6","#a3e635","#818cf8",
+  "#2dd4bf","#fb7185","#a78bfa","#67e8f9","#fdba74",
+  "#bef264","#e879f9","#6ee7b7","#fda4af","#93c5fd",
 ]
 
 function getClusterColor(clusterId) {
-  if (clusterId === -1) return "#1f2937"
+  if (clusterId === -1) return "rgba(255,255,255,0.06)"
   return CLUSTER_COLORS[(clusterId + 1) % CLUSTER_COLORS.length]
 }
 
+// ── Scatter tooltip ───────────────────────────────────────────────────────────
 function ScatterTooltip({ active, payload }) {
   if (!active || !payload || !payload.length) return null
   const d = payload[0].payload
   return (
     <div style={{
-      background: "#1f2937", border: "1px solid #374151",
-      borderRadius: "8px", padding: "10px 12px", maxWidth: "220px",
+      background: "var(--bg-elevated, #0e1628)",
+      border: "1px solid var(--border)",
+      borderRadius: "8px",
+      padding: "10px 14px",
+      maxWidth: "220px",
     }}>
       <p style={{
-        fontSize: "12px", color: "#e5e7eb", marginBottom: "6px",
-        lineHeight: "1.4", display: "-webkit-box", WebkitLineClamp: 3,
+        fontSize: "12px", color: "var(--text-primary)",
+        marginBottom: "6px", lineHeight: "1.5",
+        display: "-webkit-box", WebkitLineClamp: 3,
         WebkitBoxOrient: "vertical", overflow: "hidden",
+        wordBreak: "break-word",
       }}>
         {d.title}
       </p>
-      <p style={{ fontSize: "11px", color: "#6b7280" }}>{"r/" + d.subreddit}</p>
+      <p style={{ fontSize: "10px", color: "var(--text-sec)" }}>
+        {"r/" + d.subreddit}
+      </p>
       {d.cluster !== -1 && (
-        <p style={{ fontSize: "11px", color: getClusterColor(d.cluster) }}>
+        <p style={{
+          fontSize: "10px", fontWeight: "600",
+          color: getClusterColor(d.cluster),
+          marginTop: "3px",
+        }}>
           {"Cluster " + d.cluster}
         </p>
       )}
       {d.cluster === -1 && (
-        <p style={{ fontSize: "11px", color: "#4b5563" }}>Noise point</p>
+        <p style={{ fontSize: "10px", color: "var(--text-dim)", marginTop: "3px" }}>
+          Noise point
+        </p>
       )}
     </div>
   )
 }
 
+// ── Cluster keyword card ──────────────────────────────────────────────────────
 function ClusterCard({ clusterId, terms }) {
   const color = getClusterColor(Number(clusterId))
   return (
     <div style={{
-      padding: "10px", background: "rgba(255,255,255,0.02)",
-      border: "1px solid rgba(255,255,255,0.06)",
-      borderRadius: "8px", borderTop: "3px solid " + color,
+      padding: "12px",
+      background: "var(--bg-card)",
+      border: "1px solid var(--border)",
+      borderTop: "2px solid " + color,
+      borderRadius: "var(--r-md, 10px)",
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "10px" }}>
         <div style={{
-          width: "10px", height: "10px", borderRadius: "50%",
+          width: "8px", height: "8px", borderRadius: "50%",
           background: color, flexShrink: 0,
         }} />
-        <span style={{ fontSize: "11px", color: "#9ca3af" }}>
+        <span style={{
+          fontSize: "10px", fontWeight: "600",
+          color: "var(--text-dim)",
+          textTransform: "uppercase", letterSpacing: "0.08em",
+        }}>
           {"Cluster " + clusterId}
         </span>
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "4px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "5px" }}>
         {terms.map(function(t) {
           return (
             <span key={t} style={{
-              fontSize: "11px", color: "#d1d5db",
-              background: "#1f2937", borderRadius: "4px", padding: "2px 6px",
+              fontSize: "10px", fontWeight: "500",
+              color: color,
+              background: color + "15",
+              border: "1px solid " + color + "30",
+              borderRadius: "999px",
+              padding: "2px 8px",
             }}>
               {t}
             </span>
@@ -75,6 +100,7 @@ function ClusterCard({ clusterId, terms }) {
   )
 }
 
+// ── Main component ────────────────────────────────────────────────────────────
 export default function ClusterView() {
   const [k, setK] = useState(8)
 
@@ -102,95 +128,142 @@ export default function ClusterView() {
   const labelEntries = data ? Object.entries(data.cluster_labels || {}) : []
 
   return (
-    <section className="w-full">
+    <section style={{ width: "100%" }}>
 
-      {/* Header + slider */}
-      <div style={{
-        display: "flex", alignItems: "flex-start",
-        justifyContent: "space-between",
-        marginBottom: "16px", flexWrap: "wrap", gap: "12px",
-      }}>
-        <div>
-          <h2 className="text-lg font-semibold text-gray-200">Topic Clusters</h2>
-          <p className="text-gray-500 text-sm mt-1">
-            HDBSCAN clustering on sentence embeddings. Each dot = one post.
-            Colors = topic clusters. Gray = noise (unclustered).
-          </p>
-        </div>
+      {/* ── Header ── */}
+      <div style={{ marginBottom: "22px" }}>
         <div style={{
-          display: "flex", alignItems: "center", gap: "10px",
-          background: "rgba(255,255,255,0.03)",
-          border: "1px solid rgba(255,255,255,0.08)",
-          borderRadius: "8px", padding: "10px 14px",
+          display: "flex", alignItems: "flex-start",
+          justifyContent: "space-between",
+          flexWrap: "wrap", gap: "14px",
         }}>
-          <span style={{ fontSize: "12px", color: "#9ca3af" }}>Clusters:</span>
-          <input
-            type="range" min={5} max={20} step={1} value={k}
-            onChange={function(e) { setK(Number(e.target.value)) }}
-            style={{ width: "100px", accentColor: "#3b82f6" }}
-          />
-          <span style={{
-            fontSize: "16px", fontWeight: "700", color: "white",
-            minWidth: "28px", textAlign: "center",
+          <div>
+            <p className="sec-title">Topic Clusters</p>
+            <p className="sec-desc">
+              HDBSCAN clustering on sentence embeddings. Each dot = one post.
+              Colors = topic clusters. Gray = noise (unclustered).
+            </p>
+          </div>
+
+          {/* k slider */}
+          <div style={{
+            display: "flex", alignItems: "center", gap: "12px",
+            padding: "10px 16px",
+            background: "var(--bg-card)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--r-sm)",
+            flexShrink: 0,
           }}>
-            {k}
-          </span>
+            <span style={{
+              fontSize: "10px", fontWeight: "600",
+              color: "var(--text-dim)",
+              textTransform: "uppercase", letterSpacing: "0.08em",
+            }}>
+              Clusters
+            </span>
+            <input
+              type="range" min={5} max={20} step={1} value={k}
+              onChange={function(e) { setK(Number(e.target.value)) }}
+              style={{ width: "100px" }}
+            />
+            <span className="mono" style={{
+              fontSize: "18px", fontWeight: "700",
+              color: "var(--blue, #4f8ef7)",
+              minWidth: "28px", textAlign: "center",
+              lineHeight: 1,
+            }}>
+              {k}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Stats strip */}
+      {/* ── Stats strip ── */}
       {data && !loading && (
         <div style={{
-          display: "flex", flexWrap: "wrap",
-          gap: "16px", marginBottom: "12px",
+          display: "flex", gap: "10px",
+          flexWrap: "wrap", marginBottom: "16px",
         }}>
           {[
-            ["Clusters found", data.cluster_count],
-            ["Noise points",   data.noise_count],
-            ["Total posts",    allPoints.length],
+            { label: "Clusters Found", value: data.cluster_count, color: "var(--blue, #4f8ef7)"   },
+            { label: "Noise Points",   value: data.noise_count,   color: "var(--text-dim)"         },
+            { label: "Total Posts",    value: allPoints.length,   color: "var(--text-primary)"     },
           ].map(function(item) {
             return (
-              <span key={item[0]} style={{ fontSize: "11px", color: "#6b7280" }}>
-                {item[0] + ": "}
-                <strong style={{ color: "#d1d5db" }}>{item[1]}</strong>
-              </span>
+              <div key={item.label} style={{
+                flex: "1", minWidth: "120px",
+                padding: "12px 14px",
+                background: "var(--bg-card)",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--r-md, 10px)",
+              }}>
+                <p style={{
+                  fontSize: "9px", fontWeight: "600",
+                  color: "var(--text-dim)",
+                  textTransform: "uppercase", letterSpacing: "0.1em",
+                  marginBottom: "6px",
+                }}>
+                  {item.label}
+                </p>
+                <p className="mono" style={{
+                  fontSize: "20px", fontWeight: "700",
+                  color: item.color, lineHeight: 1,
+                }}>
+                  {item.value}
+                </p>
+              </div>
             )
           })}
+
           {data.k_actual !== data.k_requested && (
-            <span style={{ fontSize: "11px", color: "#fbbf24" }}>
+            <div style={{
+              alignSelf: "center",
+              fontSize: "11px", color: "#fbbf24",
+              padding: "4px 10px",
+              background: "rgba(251,191,36,0.06)",
+              border: "1px solid rgba(251,191,36,0.15)",
+              borderRadius: "999px",
+            }}>
               {"Showing k=" + data.k_actual +
-               " (nearest available to " + data.k_requested + ")"}
-            </span>
+               " — nearest to " + data.k_requested}
+            </div>
           )}
         </div>
       )}
 
-      {/* Loading */}
+      {/* ── Loading ── */}
       {loading && (
-        <div style={{ height: "400px", background: "#0d1117", borderRadius: "10px" }}
-          className="animate-pulse"
-        />
+        <div className="skeleton"
+          style={{ height: "400px", borderRadius: "var(--r-md, 10px)" }} />
       )}
 
-      {/* Error */}
+      {/* ── Error ── */}
       {error && !loading && (
         <div style={{
-          padding: "12px", background: "#1c0a0a",
-          border: "1px solid #7f1d1d", borderRadius: "8px",
-          color: "#fca5a5", fontSize: "13px", marginBottom: "16px",
+          padding: "14px 16px",
+          background: "rgba(248,113,113,0.06)",
+          border: "1px solid rgba(248,113,113,0.2)",
+          borderLeft: "3px solid #f87171",
+          borderRadius: "var(--r-sm)",
+          color: "#fca5a5", fontSize: "13px",
+          marginBottom: "16px",
         }}>
           Failed to load clusters — check that the backend is running
         </div>
       )}
 
-      {/* Scatter chart */}
+      {/* ── Scatter chart ── */}
       {data && !loading && allPoints.length > 0 && (
         <div
           ref={chartContainerRef}
           style={{
-            background: "#0d1117", borderRadius: "10px",
-            padding: "12px", marginBottom: "16px",
-            width: "100%", boxSizing: "border-box",
+            background: "var(--bg-base, #02060f)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--r-md, 10px)",
+            padding: "12px",
+            marginBottom: "16px",
+            width: "100%",
+            boxSizing: "border-box",
           }}
         >
           <ScatterChart
@@ -203,29 +276,36 @@ export default function ClusterView() {
             <Tooltip cursor={false} content={<ScatterTooltip />} />
             <Scatter data={noise} name="noise">
               {noise.map(function(_, i) {
-                return <Cell key={i} fill="#1f2937" opacity={0.5} />
+                return <Cell key={i} fill="rgba(255,255,255,0.06)" opacity={0.6} />
               })}
             </Scatter>
             <Scatter data={clustered} name="clusters">
               {clustered.map(function(p, i) {
-                return <Cell key={i} fill={getClusterColor(p.cluster)} opacity={0.75} />
+                return (
+                  <Cell key={i} fill={getClusterColor(p.cluster)} opacity={0.8} />
+                )
               })}
             </Scatter>
           </ScatterChart>
         </div>
       )}
 
-      {/* Cluster keyword cards */}
+      {/* ── Cluster keyword cards ── */}
       {labelEntries.length > 0 && !loading && (
-        <div style={{ marginBottom: "24px" }}>
+        <div style={{ marginBottom: "20px" }}>
           <p style={{
-            fontSize: "11px", color: "#6b7280",
-            textTransform: "uppercase", letterSpacing: "0.06em",
+            fontSize: "9px", fontWeight: "600",
+            color: "var(--text-dim)",
+            textTransform: "uppercase", letterSpacing: "0.1em",
             marginBottom: "10px",
           }}>
             Top Keywords per Cluster (TF-IDF)
           </p>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
+            gap: "8px",
+          }}>
             {labelEntries.map(function(entry) {
               return (
                 <ClusterCard key={entry[0]} clusterId={entry[0]} terms={entry[1]} />
@@ -235,45 +315,60 @@ export default function ClusterView() {
         </div>
       )}
 
-      {/* Nomic Atlas — single clean block */}
+      {/* ── Nomic Atlas ── */}
       <div style={{
-        background: "rgba(255,255,255,0.02)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: "10px", padding: "20px",
         display: "flex", alignItems: "center",
         justifyContent: "space-between",
-        flexWrap: "wrap", gap: "12px",
+        flexWrap: "wrap", gap: "16px",
+        padding: "20px 22px",
+        background: "var(--bg-card)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--r-md, 10px)",
       }}>
-        <div>
+        <div style={{ flex: 1, minWidth: "240px" }}>
           <p style={{
-            fontSize: "13px", color: "#9ca3af",
-            fontWeight: "600", marginBottom: "4px",
+            fontSize: "9px", fontWeight: "600",
+            color: "var(--text-dim)",
+            textTransform: "uppercase", letterSpacing: "0.1em",
+            marginBottom: "6px",
           }}>
-            Interactive Embedding Space — Nomic Atlas
+            Interactive Embedding Space
           </p>
-          <p style={{ fontSize: "11px", color: "#4b5563", marginBottom: "8px" }}>
+          <p style={{
+            fontSize: "14px", fontWeight: "600",
+            color: "var(--text-primary)",
+            marginBottom: "6px", letterSpacing: "-0.2px",
+          }}>
+            Nomic Atlas
+          </p>
+          <p style={{
+            fontSize: "12px", color: "var(--text-dim)",
+            lineHeight: "1.5", marginBottom: "12px",
+            maxWidth: "440px",
+          }}>
             8,309 post embeddings uploaded. Explore topic neighborhoods,
             semantic clusters, and ideological groupings interactively.
           </p>
-          <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-            <span style={{
-              fontSize: "11px", color: "#10b981",
-              background: "#10b98120", borderRadius: "4px", padding: "2px 8px",
-            }}>
-              {"✓ 8,309 embeddings uploaded"}
-            </span>
-            <span style={{
-              fontSize: "11px", color: "#3b82f6",
-              background: "#3b82f620", borderRadius: "4px", padding: "2px 8px",
-            }}>
-              {"all-MiniLM-L6-v2 · 384D"}
-            </span>
-            <span style={{
-              fontSize: "11px", color: "#a855f7",
-              background: "#a855f720", borderRadius: "4px", padding: "2px 8px",
-            }}>
-              Nomic Atlas
-            </span>
+
+          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+            {[
+              { text: "8,309 embeddings uploaded", color: "var(--green, #34d399)" },
+              { text: "all-MiniLM-L6-v2 · 384D",  color: "var(--blue, #4f8ef7)"  },
+              { text: "Nomic Atlas",                color: "var(--purple, #c084fc)"},
+            ].map(function(tag) {
+              return (
+                <span key={tag.text} style={{
+                  fontSize: "10px", fontWeight: "600",
+                  color: tag.color,
+                  background: tag.color + "15",
+                  border: "1px solid " + tag.color + "25",
+                  borderRadius: "999px",
+                  padding: "3px 9px",
+                }}>
+                  {tag.text}
+                </span>
+              )
+            })}
           </div>
         </div>
 
@@ -283,10 +378,17 @@ export default function ClusterView() {
           rel="noreferrer"
           style={{
             display: "inline-flex", alignItems: "center", gap: "6px",
-            padding: "10px 18px", background: "#1d4ed8", color: "white",
-            borderRadius: "8px", textDecoration: "none",
-            fontSize: "13px", fontWeight: "600", flexShrink: 0,
+            padding: "10px 20px",
+            background: "var(--blue, #4f8ef7)",
+            color: "white",
+            borderRadius: "var(--r-sm)",
+            textDecoration: "none",
+            fontSize: "12px", fontWeight: "600",
+            flexShrink: 0, whiteSpace: "nowrap",
+            transition: "opacity 0.15s",
           }}
+          onMouseEnter={function(e) { e.currentTarget.style.opacity = "0.85" }}
+          onMouseLeave={function(e) { e.currentTarget.style.opacity = "1" }}
         >
           Open Nomic Atlas Map ↗
         </a>

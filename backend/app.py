@@ -5,7 +5,6 @@ from dotenv import load_dotenv
 from functools import lru_cache
 import json
 from flask_compress import Compress 
-Compress(app)
 
 # Simple in-memory cache for expensive endpoints
 _cache = {}
@@ -21,6 +20,7 @@ print("DEBUG KEY:", os.getenv("GROQ_API_KEY"))
 
 app = Flask(__name__)
 CORS(app)
+Compress(app)
 
 DATA = "../data"
 
@@ -193,8 +193,11 @@ def search():
         return jsonify({"results":[],"total":0,"query":q,
                         "suggested_queries":[],"warning":"Query too short — enter at least 2 characters"})
 
-    q_emb = embed_model.encode([q]).astype("float32")
-    faiss.normalize_L2(q_emb)
+    if q not in _cache:
+        emb = embed_model.encode([q]).astype("float32")
+        faiss.normalize_L2(emb)
+        _cache[q] = emb
+    q_emb = _cache[q]
     D, I = index.search(q_emb, lim * 4)
 
     results = meta.iloc[I[0]].copy()
