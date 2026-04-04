@@ -7,10 +7,15 @@ from flask_compress import Compress
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=[
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "https://*.vercel.app",        # all Vercel preview URLs
+    "https://narrativetracker.vercel.app",  # your final URL — update after deploy
+])
 Compress(app)
 
-DATA = "../data"
+DATA = os.path.join(os.path.dirname(__file__), "data")
 
 # ── LOAD ALL DATA AT STARTUP ──────────────────────────────────────────────────
 print("Loading data files...")
