@@ -36,8 +36,6 @@ backend/.env
 # ==============================
 # ML artifacts (usually ignore)
 # ==============================
-*.npy
-*.index
 *.pt
 *.bin
 *.model
