@@ -13,17 +13,20 @@ NarrativeTracker reveals patterns that manual browsing cannot: at the scale of 8
 ## Table of Contents
 
 1. [Live Links and Public Deployments](#live-links-and-public-deployments)
-2. [Dataset Scope and Composition](#dataset-scope-and-composition)
-3. [Technology Stack and System Architecture](#technology-stack-and-system-architecture)
-4. [Core Feature Walkthrough](#core-feature-walkthrough)
-5. [Sidebar Global Context System Design](#sidebar-global-context-system-design)
-6. [ML and AI Components](#ml-and-ai-components)
-7. [Performance Optimizations](#performance-optimizations)
-8. [Semantic Search Validation Examples](#semantic-search-validation-examples)
-9. [Backend API Reference](#backend-api-reference)
-10. [Local Setup and Reproducibility](#local-setup-and-reproducibility)
-11. [Deployment Configuration](#deployment-configuration)
-12. [Author and SimPPL Attribution](#author-and-simppl-attribution)
+2. [Submission Context for Evaluators](#submission-context-for-evaluators)
+3. [Dataset Scope and Composition](#dataset-scope-and-composition)
+4. [Technology Stack and System Architecture](#technology-stack-and-system-architecture)
+5. [Core Feature Walkthrough](#core-feature-walkthrough)
+6. [Sidebar Global Context System Design](#sidebar-global-context-system-design)
+7. [ML and AI Components](#ml-and-ai-components)
+8. [Performance Optimizations](#performance-optimizations)
+9. [Semantic Search Validation Examples](#semantic-search-validation-examples)
+10. [Backend API Reference](#backend-api-reference)
+11. [Local Setup and Reproducibility](#local-setup-and-reproducibility)
+12. [Deployment Configuration](#deployment-configuration)
+13. [Deployment Issues I Faced and How I Fixed Them](#deployment-issues-i-faced-and-how-i-fixed-them)
+14. [Current Limitations and Next Improvements](#current-limitations-and-next-improvements)
+15. [Author and SimPPL Attribution](#author-and-simppl-attribution)
 
 ---
 
@@ -38,6 +41,20 @@ NarrativeTracker reveals patterns that manual browsing cannot: at the scale of 8
 
 **Nomic Atlas (prominent link):**
 https://atlas.nomic.ai/data/tapasyapatel.gda/narrativetracker-reddit-political/map
+
+---
+
+## Submission Context for Evaluators
+
+| Assignment expectation | Where it appears in this project |
+|---|---|
+| Semantic search with zero keyword overlap | /api/search + examples table in this README |
+| Time-series + AI plain-language summaries | TimeSeriesChart + AISummary + /api/summarize |
+| Network influence + node removal stress test | /api/network?remove_node= + NetworkGraph tab |
+| Topic clustering with tunable k | /api/clusters with precomputed k values |
+| Interactive embedding map link | Nomic Atlas public map |
+
+Implementation note: this codebase prioritizes transparent and reproducible analysis over production microservice complexity.
 
 ---
 
@@ -348,6 +365,32 @@ python fetch_events.py
 | Framework preset | Vite |
 | Required env var | VITE_API_URL=https://Tapasya-12-narrativetracker-backend.hf.space |
 | Deploy mode | Auto-deploy from GitHub |
+
+---
+
+## Deployment Issues I Faced and How I Fixed Them
+
+| Issue | What happened | Fix |
+|---|---|---|
+| HuggingFace port mismatch | Container looked healthy locally on 5000 but failed in Spaces health checks | Bound gunicorn to 0.0.0.0:7860 and exposed 7860 |
+| Data path failures in Docker | Relative paths worked locally but failed inside container working directory | Resolved data path from os.path.dirname(__file__) and copied artifacts to /app/data |
+| Large artifact deployment instability | .parquet/.index/.npy files were not consistently available without binary tracking | Used Git LFS for large data artifacts |
+| Worker restarts during model-heavy startup | Multiple gunicorn workers caused instability and memory pressure | Switched to --workers 1 --timeout 120 |
+| Slow/fragile first embedding request | Runtime model download made first semantic call unreliable | Pre-downloaded all-MiniLM-L6-v2 at Docker build time |
+| Vercel frontend hitting wrong backend URL | Localhost URL accidentally leaked into production env | Set VITE_API_URL explicitly in Vercel project settings |
+| CORS mismatch on deployed POST requests | Summary and analysis endpoints failed from frontend | Updated flask-cors policy to allow deployment origin path |
+
+---
+
+## Current Limitations and Next Improvements
+
+| Current limitation | Why it exists now | Planned improvement |
+|---|---|---|
+| Single-worker backend | Chosen for model stability and memory safety in Spaces | Add queued async summarization and benchmark 2-worker profile |
+| Static artifact refresh workflow | Data pipeline currently manual/script-driven | Add one-command rebuild + validation script |
+| No user auth or saved sessions | Assignment scope focused on analytics, not accounts | Add query/session persistence for longitudinal analysis |
+| Groq dependency for summaries | External API dependency can add latency | Add fallback local summarizer mode and response caching |
+| Limited ideological source bias dictionary | Current mapping is intentionally small and explicit | Expand source taxonomy with transparent labeling criteria |
 
 ---
 
