@@ -499,11 +499,27 @@ export default function VelocityChart() {
           </div>
 
           {/* AI Summary — outside the grid */}
+          {/* AI Summary — outside the grid */}
+        {data.timeline && data.timeline.length > 0 && (
           <AISummary
             type="velocity"
-            data={data.timeline || []}
-            context={"first mover: " + data.first_mover + ", query: " + lastQ}
+            data={
+              data.timeline.map(function(row) {
+                return {
+                  created_utc: row.date,
+                  subreddit:   row.subreddit,
+                  count:       row.count,
+                }
+              })
+            }
+            context={
+              "Information velocity for query: " + lastQ +
+              ". First community to post: r/" + data.first_mover +
+              ". Total relevant posts: " + data.total +
+              ". Propagation order: " + orderedSubs.map(function(s) { return "r/" + s }).join(" → ")
+            }
           />
+        )}
         </div>
       )}
     </section>
