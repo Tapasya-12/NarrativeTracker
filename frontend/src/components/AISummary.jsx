@@ -5,9 +5,9 @@ const BASE = import.meta.env.VITE_API_URL || ""
 
 export default function AISummary({ type, data, context }) {
   const [summary, setSummary] = useState("")
-  const [loading, setLoading] = useState(true)  // ← start true, not false
+  const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState(false)
-  const hasFired = useRef(false)
+  const prevKeyRef = useRef(null)
 
   useEffect(function() {
     if (!data || !data.length) {
@@ -15,36 +15,36 @@ export default function AISummary({ type, data, context }) {
       return
     }
 
-    // Only fire once per data set
-    hasFired.current = false
-    var cancelled = false
+    // Build a stable key from actual data content
+    var key = type + "|" + JSON.stringify(data.slice(0, 3))
+    if (key === prevKeyRef.current) return  // same data — skip
+    prevKeyRef.current = key
 
+    var cancelled = false
     setLoading(true)
     setSummary("")
     setError(false)
 
-    axios
-      .post(BASE + "/api/summarize", {
-        type,
-        data:    data.slice(0, 30),
-        context: context || "",
-      })
-      .then(function(r) {
-        if (cancelled) return
-        setSummary(r.data.summary || "")
-        setLoading(false)
-      })
-      .catch(function() {
-        if (cancelled) return
-        setError(true)
-        setLoading(false)
-      })
+    axios.post(BASE + "/api/summarize", {
+      type,
+      data:    data.slice(0, 30),
+      context: context || "",
+    })
+    .then(function(r) {
+      if (cancelled) return
+      setSummary(r.data.summary || "")
+      setLoading(false)
+    })
+    .catch(function() {
+      if (cancelled) return
+      setError(true)
+      setLoading(false)
+    })
 
     return function() { cancelled = true }
 
-  }, [JSON.stringify(data && data.slice(0, 5)), type])
+  }, [data, type])
 
-  // Only hide if no data at all
   if (!data || !data.length) return null
 
   return (
@@ -57,8 +57,7 @@ export default function AISummary({ type, data, context }) {
       borderRadius: "8px",
     }}>
       <p style={{
-        fontSize: "9px",
-        fontWeight: "700",
+        fontSize: "9px", fontWeight: "700",
         color: "#4f8ef7",
         textTransform: "uppercase",
         letterSpacing: "0.1em",
@@ -67,7 +66,7 @@ export default function AISummary({ type, data, context }) {
         AI Summary
       </p>
 
-      {loading && (
+      {(loading || (!summary && !error)) && (
         <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
           {[100, 88, 70].map(function(w) {
             return (
@@ -83,7 +82,7 @@ export default function AISummary({ type, data, context }) {
 
       {error && !loading && (
         <p style={{
-          fontSize: "13px",
+          fontSize: "12px",
           color: "var(--text-dim)",
           fontStyle: "italic",
           margin: 0,
