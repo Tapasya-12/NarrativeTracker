@@ -496,16 +496,14 @@ export default function VelocityChart() {
                 />
               )
             })}
-
-            {/* AI Summary */}
-            {data && data.first_mover && !loading && (
-            <AISummary
-              type="velocity"
-              data={data.timeline || []}
-              context={"first mover: " + data.first_mover + ", query: " + lastQ}
-            />
-          )}
           </div>
+
+          {/* AI Summary — outside the grid */}
+          <AISummary
+            type="velocity"
+            data={data.timeline || []}
+            context={"first mover: " + data.first_mover + ", query: " + lastQ}
+          />
         </div>
       )}
     </section>
