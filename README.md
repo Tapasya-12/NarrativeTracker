@@ -1,252 +1,285 @@
----
-title: NarrativeTracker Backend
-emoji: 📊
-colorFrom: blue
-colorTo: purple
-sdk: docker
-pinned: false
----
-
 # NarrativeTracker
 
-![Live Demo](https://img.shields.io/badge/Live%20Demo-Coming%20Soon-6b7280?style=flat-square)
-![Built with React](https://img.shields.io/badge/Built%20with-React-61dafb?style=flat-square&logo=react&logoColor=222)
-![Python](https://img.shields.io/badge/Python-3.x-3776ab?style=flat-square&logo=python&logoColor=white)
-![License MIT](https://img.shields.io/badge/License-MIT-2ea043?style=flat-square)
+[![Live Demo](https://img.shields.io/badge/Live-Demo-0ea5e9?style=for-the-badge&logo=vercel&logoColor=white)](https://narrative-tracker.vercel.app)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![React](https://img.shields.io/badge/React-Vite-149ECA?style=for-the-badge&logo=react&logoColor=white)](https://react.dev/)
+[![License MIT](https://img.shields.io/badge/License-MIT-16a34a?style=for-the-badge)](LICENSE)
+[![HuggingFace Spaces](https://img.shields.io/badge/HuggingFace-Spaces-f59e0b?style=for-the-badge&logo=huggingface&logoColor=white)](https://Tapasya-12-narrativetracker-backend.hf.space/api/health)
 
-NarrativeTracker is a political narrative analysis dashboard built for the SimPPL Research Engineering internship assignment. Using 8,799 Reddit posts from 10 ideologically distinct communities (Jul 2024-Feb 2025), it makes three phenomena measurable in one interface: narrative divergence (how blocs frame the same event differently), information velocity (which communities break and propagate stories first), and citation/network structure (how echo chambers emerge through crossposting and media links).
+NarrativeTracker reveals patterns that manual browsing cannot: at the scale of 8,799 posts across 10 politically distinct communities, the same event develops into different narratives by ideological bloc, and those narratives do not move at the same speed. By combining semantic retrieval, timeline instrumentation, and network structure, the dashboard makes divergence measurable, identifies first-mover communities, and shows how framing and influence propagate from July 2024 to February 2025.
 
--------------------------------------------------------------------------------
+---
 
 ## Table of Contents
 
-1. [Project Scope](#project-scope)
-2. [Dataset](#dataset)
-3. [System Architecture](#system-architecture)
-4. [ML and Analytical Components](#ml-and-analytical-components)
-5. [Core Features](#core-features)
-6. [Performance Engineering](#performance-engineering)
-7. [Sidebar as Global Context](#sidebar-as-global-context)
-8. [Semantic Search Examples](#semantic-search-examples)
-9. [Setup and Local Development](#setup-and-local-development)
-10. [Deployment](#deployment)
-11. [Author](#author)
-12. [Citation and Acknowledgements](#citation-and-acknowledgements)
+1. [Live Links and Public Deployments](#live-links-and-public-deployments)
+2. [Dataset Scope and Composition](#dataset-scope-and-composition)
+3. [Technology Stack and System Architecture](#technology-stack-and-system-architecture)
+4. [Core Feature Walkthrough](#core-feature-walkthrough)
+5. [Sidebar Global Context System Design](#sidebar-global-context-system-design)
+6. [ML and AI Components](#ml-and-ai-components)
+7. [Performance Optimizations](#performance-optimizations)
+8. [Semantic Search Validation Examples](#semantic-search-validation-examples)
+9. [Backend API Reference](#backend-api-reference)
+10. [Local Setup and Reproducibility](#local-setup-and-reproducibility)
+11. [Deployment Configuration](#deployment-configuration)
+12. [Author and SimPPL Attribution](#author-and-simppl-attribution)
 
--------------------------------------------------------------------------------
+---
 
-## Project Scope
+## Live Links and Public Deployments 🌐
 
-The dashboard tracks discourse around Donald Trump's return to power across four ideological blocs:
-
-| Bloc | Subreddits |
+| Surface | URL |
 |---|---|
-| Left Radical | r/Anarchism, r/socialism |
-| Center Left | r/Liberal, r/politics, r/neoliberal, r/PoliticalDiscussion, r/democrats |
-| Right | r/Conservative, r/Republican |
-| Mixed | r/worldpolitics |
+| Live Frontend | https://narrative-tracker.vercel.app |
+| Live Backend Health | https://Tapasya-12-narrativetracker-backend.hf.space/api/health |
+| Nomic Atlas Map (Interactive Embeddings) | https://atlas.nomic.ai/data/tapasyapatel.gda/narrativetracker-reddit-political/map |
+| GitHub Repository | https://github.com/Tapasya-12/NarrativeTracker |
 
-The goal is not only to retrieve relevant posts, but to compare framing, sequence diffusion across communities, and structural influence patterns in crosspost and citation networks.
+**Nomic Atlas (prominent link):**
+https://atlas.nomic.ai/data/tapasyapatel.gda/narrativetracker-reddit-political/map
 
--------------------------------------------------------------------------------
+---
 
-## Dataset
+## Dataset Scope and Composition 📊
+
+NarrativeTracker analyzes a Reddit corpus focused on reactions to Trump's return to power, covering July 2024 through February 2025. The dataset was cleaned for spam-heavy off-topic content and then transformed into analysis artifacts for semantic search, clustering, network analytics, and timeline analysis.
+
+### Dataset Statistics
 
 | Metric | Value |
 |---|---:|
-| Raw records | 8,799 Reddit posts |
-| Time span | Jul 2024-Feb 2025 |
-| Communities | 10 subreddits |
-| File size | 43 MB (`data/posts.jsonl`) |
-| Non-spam posts after filtering | 8,309 |
-| Stored analytics | DuckDB + Parquet + FAISS + JSON artifacts |
+| Raw source file | posts.jsonl (43MB) |
+| Raw posts before filtering | 9,011 |
+| Spam filtered | 212 |
+| Total posts after filtering | 8,799 |
+| Date range | July 2024 - February 2025 |
+| Communities analyzed | 10 subreddits |
+| Ideological blocs | 4 |
+| Unique authors | 3,584 |
+| Top post title | Trump Fires Hundreds of Staff Overseeing Nuclear Weapons |
+| Top post score | 49,905 |
+| Crosspost count | Significant cross-community sharing detected |
 
-Primary data artifacts used by the app:
+### Ideological Bloc Breakdown
 
-| Artifact | Role |
+| Bloc | Subreddit | Posts |
+|---|---|---:|
+| Left Radical | r/Anarchism | 838 |
+| Left Radical | r/socialism | 951 |
+| Center Left | r/Liberal | 960 |
+| Center Left | r/politics | 991 |
+| Center Left | r/neoliberal | 981 |
+| Center Left | r/PoliticalDiscussion | 116 |
+| Center Left | r/democrats | 930 |
+| Right | r/Conservative | 970 |
+| Right | r/Republican | 839 |
+| Mixed | r/worldpolitics | 945 |
+
+Note on mixed bloc quality: r/worldpolitics had a high off-topic spam rate (about 40%), which is why explicit spam filtering was necessary before downstream modeling.
+
+---
+
+## Technology Stack and System Architecture 🧱
+
+### Frontend
+
+| Layer | Choice |
 |---|---|
-| `data/posts.jsonl` | Source post corpus |
-| `data/reddit.duckdb` | SQL analytics store |
-| `data/faiss.index` | Vector similarity search index |
-| `data/events.json` | Offline event markers for timelines |
-| `data/network_*.json` | Precomputed network structures |
-| `data/clusters.json` | Precomputed embedding projections and labels |
+| UI framework | React 18 + Vite |
+| Styling | Tailwind CSS utility classes |
+| Charts | Recharts (time-series, scatter) |
+| Graph rendering | react-force-graph-2d |
+| HTTP client | axios |
 
--------------------------------------------------------------------------------
+### Backend
 
-## System Architecture
-
-NarrativeTracker uses a split architecture: React + Vite frontend for interactive visualization and a Flask backend for cached analytics and semantic retrieval.
-
-| Layer | Stack |
+| Layer | Choice |
 |---|---|
-| Frontend | React (18+ pattern), Vite, Tailwind CSS, Recharts, react-force-graph-2d |
-| Backend | Flask, flask-cors, flask-compress, DuckDB, FAISS (`IndexFlatIP`) |
-| ML/NLP | all-MiniLM-L6-v2 (384D), HDBSCAN, PCA, TF-IDF, PageRank, Louvain |
-| GenAI | Groq `llama-3.1-8b-instant` for summaries, query suggestions, framing analysis |
-| Deployment | HuggingFace Spaces (backend, Docker), Vercel (frontend) |
+| API server | Flask |
+| Cross-origin and compression | flask-cors, flask-compress (gzip) |
+| Data processing | pandas, numpy |
+| Semantic retrieval | FAISS IndexFlatIP |
+| Embedding model | sentence-transformers (all-MiniLM-L6-v2) |
+| Community analytics | python-louvain |
+| Graph metrics | networkx (PageRank, graph analysis) |
+| AI generation | Groq API (llama-3.1-8b-instant) |
+| Production WSGI | gunicorn |
 
-Embedding map (external interactive exploration):
-https://atlas.nomic.ai/data/tapasyapatel.gda/narrativetracker-reddit-political/map
+### Deployment
 
--------------------------------------------------------------------------------
+| Component | Platform | Notes |
+|---|---|---|
+| Backend API | HuggingFace Spaces | Docker container, port 7860 |
+| Frontend UI | Vercel | GitHub auto-deploy |
+| Embedding exploration | Nomic Atlas | 8,309 embeddings uploaded, interactive public map |
 
-## ML and Analytical Components
+---
 
-| Component | Model/Method | Purpose | Key param |
-|---|---|---|---|
-| Semantic embedding | sentence-transformers `all-MiniLM-L6-v2` | Encode queries/posts for semantic retrieval and comparison | 384D vectors, cosine via normalized inner product |
-| Vector search | FAISS `IndexFlatIP` | Fast nearest-neighbor retrieval over all posts | Inner-product index on L2-normalized embeddings |
-| Topic clustering | HDBSCAN on PCA-reduced embeddings | Discover narrative clusters without fixed cluster count | PCA 50D input, selectable output views (5/8/12/20) |
-| Projection for scatter plot | PCA | Visualizable 2D map of discourse structure | 2D projection for interactive plot |
-| Cluster labeling | TF-IDF keywords | Human-readable cluster summaries | Top weighted terms per cluster |
-| Subreddit influence graph | Directed PageRank | Rank narrative influence in crosspost graph | edge weight = `crosspost_count` |
-| Network communities | Louvain | Detect subnetworks/echo-chamber structure | modularity-driven partitioning |
-| Time trend explanation | Groq `llama-3.1-8b-instant` | Convert chart data to plain-language summaries | 2-3 sentence constrained prompts |
-| Query assistance | Groq `llama-3.1-8b-instant` | Suggest follow-up semantic queries | exactly 3 JSON string suggestions |
-| Framing comparison | Groq `llama-3.1-8b-instant` | Explain cross-bloc narrative framing differences | 3-4 sentence research-oriented framing analysis |
+## Core Feature Walkthrough 🔍
 
--------------------------------------------------------------------------------
+### 1) Narrative Divergence Tracker (WOW Feature)
 
-## Core Features
+Narrative Divergence executes one semantic query and presents the top three relevant posts per ideological bloc in a synchronized four-column layout. This design turns framing comparison into a direct side-by-side reading task: you can inspect how each bloc describes causation, responsibility, and risk for the same topic in one screen. The module also generates AI framing analysis that explicitly compares language, emphasis, and implied blame.
 
-### 1) Narrative Divergence Tracker (WOW Feature 1)
+**Key technical detail:** FAISS cosine retrieval with similarity threshold >0.25, top 300 candidates scanned, and top 3 posts returned per bloc from /api/narrative_divergence; framing text is generated by /api/narrative_analysis using Groq.
 
-This view executes one semantic query across all four ideological blocs simultaneously, then returns the top 3 most relevant posts per bloc. It answers a framing question rather than a ranking question: how does each community describe causation, blame, and stakes for the same event?
+[Screenshot: Narrative Divergence Tracker]
 
-Why it matters: It operationalizes narrative divergence as comparable evidence instead of anecdotal reading.
+### 2) Information Velocity (WOW Feature)
 
-Key technical detail: endpoint `/api/narrative_divergence` retrieves top semantic matches and partitions by `ideological_bloc`; `/api/narrative_analysis` then generates bloc-level framing analysis from returned titles.
+Information Velocity identifies which community posted first for a semantic topic and then reconstructs the propagation order across subreddits. It shows a first-mover badge (community, date, relevance, title), a ranked propagation list with +N communities later labels, and per-subreddit mini sparklines for temporal spread. This makes narrative diffusion auditable instead of anecdotal.
 
-### 2) Information Velocity (WOW Feature 2)
+**Key technical detail:** /api/velocity embeds query once, searches top 300 FAISS candidates, filters at similarity >0.3, computes first post per subreddit, and emits timeline rows used by the sparkline panels; AI summary explains propagation behavior in plain English.
 
-This component identifies first movers for a topic and visualizes propagation order across communities. It includes per-subreddit mini timecharts and a First Mover marker with relevance context.
-
-Why it matters: It separates origin from amplification, which is necessary for influence analysis.
-
-Key technical detail: endpoint `/api/velocity` computes earliest relevant post timestamps per subreddit from semantic result sets and returns both first-post metadata and date-grouped timelines.
+[Screenshot: Information Velocity]
 
 ### 3) Semantic Search
 
-Search is embedding-based rather than token-overlap-based, with bloc filtering, pagination in UI (15/page), and AI query suggestions. The system supports multilingual queries through shared embedding space.
+Search is semantic rather than lexical: concept-level queries return relevant posts even with zero keyword overlap and across languages. Results are paginated at 15 per page in the UI, include bloc filter pills, and support a Show more interaction without requerying the backend. After each successful search, the system asks Groq for three related exploratory queries.
 
-Why it matters: Research queries are often conceptual (for example, "abuse of power") and may not share vocabulary with the target posts.
+**Key technical detail:** /api/search uses FAISS IndexFlatIP on normalized embeddings, applies threshold >0.2, returns up to 25 results, and handles short queries (<2 chars), empty result sets, and multilingual inputs; sidebar context can pre-filter to a bloc and display a contextual banner.
 
-Key technical detail: FAISS `IndexFlatIP` over normalized embeddings enables cosine-equivalent retrieval; query embeddings are cached so repeated queries never re-embed.
+[Screenshot: Semantic Search]
 
 ### 4) Post Activity Over Time
 
-The timeline module supports weekly/daily/monthly views, overlays political event markers, and includes a "By Bloc" mode for direct ideological comparison in one chart.
+The timeline module tracks post volume across day, week, and month granularities for July 2024 through February 2025, with event overlays for election, inauguration, and policy moments. Users can switch to a By Bloc view to compare all four ideological communities on one chart. Event markers are rendered as colored vertical reference lines and explained in a two-column legend grid.
 
-Why it matters: It links narrative surges to external events and highlights asymmetry between communities.
+**Key technical detail:** /api/timeseries and /api/timeseries/blocs are precomputed caches; the chart overlays 8 curated events (red election, purple inauguration, blue policy), and dynamic AI summaries are generated from actual datapoints via /api/summarize.
 
-Key technical detail: all subreddit-granularity combinations are precomputed at backend startup, and bloc-level time series are separately cached for instant retrieval.
+[Screenshot: Post Activity Over Time]
 
 ### 5) Network Analysis (4 Tabs)
 
-The network module includes subreddit crosspost flow, bridge-author structure, source citation graph, and source-bias view. It also supports "Remove Top Node" for redistribution analysis after removing a dominant actor.
+The network module includes four analytic views: Subreddit Crosspost flow, Author Influence, Source Citation network, and Source Bias quantification. Directed edges and PageRank expose influence concentration, Louvain colors reveal communities, and bridge authors are marked with white rings when they span ideological blocs. A Remove Top Node control intentionally stress-tests influence resilience by re-simulating after removing the highest PageRank actor.
 
-Why it matters: It quantifies influence topology and exposes whether information flow is centralized, fragmented, or insulated.
+**Key technical detail:** /api/network supports type= and remove_node=, /api/source_network serves citation edges, and client behavior auto-highlights sidebar-selected subreddit nodes with an outer ring without triggering force re-simulation.
 
-Key technical detail: directed weighted graphs use PageRank for influence and Louvain for community structure; removal mode is computed by filtering nodes/edges server-side and recomputing visualization state client-side.
+[Screenshot: Network Analysis]
 
 ### 6) Topic Clusters
 
-Topic clusters are generated from semantically embedded posts, projected into an interactive scatter plot (8,799 points). A tunable `k` selector (5/8/12/20) allows sensitivity testing of narrative segmentation.
+Topic Clusters visualizes all 8,799 posts as an interactive scatter where each dot is a post and each cluster is semantically defined. Users can inspect title/subreddit/cluster via tooltip, review TF-IDF keyword pills per cluster, and analyze noise points rendered as dark gray semi-transparent dots. Cluster resolution is tunable through precomputed variants, enabling sensitivity checks without runtime model execution.
 
-Why it matters: It provides meso-level structure between individual posts and aggregate time/network metrics.
+**Key technical detail:** embeddings are reduced to 50D PCA for HDBSCAN clustering, rendered in 2D scatter space, and served from startup caches for k in {5, 8, 12, 20}; Nomic Atlas link provides full 384D exploratory context.
 
-Key technical detail: HDBSCAN runs on PCA-reduced 50D embeddings; cluster labels use TF-IDF keyword extraction; a 2D projection drives plot rendering. Full map is available in Nomic Atlas.
+[Screenshot: Topic Clusters]
 
--------------------------------------------------------------------------------
+---
 
-## Performance Engineering
+## Sidebar Global Context System Design 🧭
 
-Backend and frontend were optimized to keep interaction latency low during exploratory analysis.
+The sidebar is implemented as a global context setter, not a local filter. Selecting any subreddit coordinates multiple panels so the analyst can keep one community lens while moving across very different views (stats, semantic retrieval, time trends, and network topology).
 
-| Endpoint/Module | Strategy | Response time |
-|---|---|---|
-| `/api/stats` (all) | Pre-serialized JSON at startup | microseconds |
-| `/api/subreddits` | Pre-serialized JSON at startup | microseconds |
-| `/api/events` | Pre-serialized JSON at startup | microseconds |
-| `/api/network` (default modes) | Pre-serialized network JSON cache | microseconds |
-| `/api/clusters?k=5/8/12/20` | Prebuilt per-k payload cache | microseconds |
-| `/api/source_network?min_weight=3` | Pre-filtered cached payload | microseconds |
-| `/api/timeseries` | Precomputed subreddit x granularity cache (36 combos) | microseconds |
-| `/api/timeseries/blocs` | Precomputed bloc cache for day/week/month | microseconds |
-| `/api/stats` (specific subreddit) | Fast in-memory filter on cleaned dataframe | about 2 ms on 8k rows |
-| Semantic endpoints (`/api/search`, `/api/narrative_divergence`, `/api/velocity`) | Embedding cache avoids repeat model inference | avoids repeated embedding latency |
-| HTTP transport | `flask-compress` gzip on responses | lower payload transfer time |
-| Flask server | `threaded=True` | parallel request handling |
-| Frontend heavy views | React lazy loading + IntersectionObserver (`350px` threshold) | lower initial render cost |
-| Frontend graph stability | `React.memo` + `useRef` in node painter | avoids unnecessary force-graph re-simulation |
-
--------------------------------------------------------------------------------
-
-## Sidebar as Global Context
-
-The sidebar is implemented as a global context setter, not just navigation. Selecting a subreddit propagates a single shared filter state across panels and updates views client-side without triggering extra backend calls for each panel transition.
-
-Example system behavior when selecting `r/Conservative`:
-
-| Module | Result |
-|---|---|
-| StatBar | Shows `r/Conservative` summary metrics |
-| Narrative Divergence | Pre-highlights Right bloc column |
-| Semantic Search | Auto-filters to Right bloc context |
-| Network Graph | Auto-selects/highlights `r/Conservative` node |
-
-Design rationale: a single global context improves analytical continuity across heterogeneous views (time series, embeddings, network, semantic retrieval) and keeps interaction cost low.
-
--------------------------------------------------------------------------------
-
-## Semantic Search Examples
-
-Required zero-overlap and multilingual cases validated for this project:
-
-| Query | Language | What it finds | Overlap |
+| Step | Dashboard Module | Behavior on subreddit selection | API call required? |
 |---|---|---|---|
-| anger about government overreach | English | DOGE layoffs and nuclear firing discussions despite different lexical phrasing | Zero keyword overlap |
-| economic anxiety workers losing income | English | Federal employee termination posts and income-loss narratives | Zero keyword overlap |
-| लोकतंत्र में सत्ता का दुरुपयोग | Hindi | English posts about executive overreach and democratic power abuse | Cross-lingual semantic match |
+| 1 | StatBar | Shows community-specific posts, authors, date range, avg score, top post | Yes: /api/stats?subreddit=X |
+| 2 | Narrative Divergence | Highlights corresponding ideological column with border, background, Sidebar badge | No (client-side only) |
+| 3 | Semantic Search | Pre-filters visible results to the selected bloc and shows sidebar context banner | No (client-side only) |
+| 4 | TimeSeriesChart | Filters timeline to selected subreddit | Yes: /api/timeseries |
+| 5 | NetworkGraph | Auto-selects matching subreddit node and draws highlight ring | No (client-side only) |
 
--------------------------------------------------------------------------------
+Critical architecture decision: steps 2, 3, and 5 are all client-side state transitions with zero extra backend requests. The NetworkGraph highlight path uses a useRef-based node painter flow so sidebar clicks do not restart force simulation.
 
-## Setup and Local Development
+---
 
-### Prerequisites
+## ML and AI Components 🤖
 
-| Tool | Recommended |
-|---|---|
-| Python | 3.10+ |
-| Node.js | 18+ |
-| npm | 9+ |
+| Component | Model / Algorithm | Key Parameters | Library |
+|---|---|---|---|
+| Sentence embeddings | all-MiniLM-L6-v2 | 384D output, cosine similarity | sentence-transformers |
+| Vector search | FAISS IndexFlatIP | L2-normalized cosine, top-k×4 candidates | faiss-cpu |
+| Dimensionality reduction | PCA | 50D for clustering, 2D for scatter visualization | scikit-learn |
+| Topic clustering | HDBSCAN | min_cluster_size=max(5,n//(k×3)), euclidean metric | hdbscan |
+| Cluster labeling | TF-IDF | top 5 terms per cluster, per-cluster corpus | scikit-learn |
+| Influence scoring | PageRank | directed graph, weight=crosspost_count, α=0.85 | networkx |
+| Community detection | Louvain | undirected, modularity maximization | python-louvain |
+| AI summaries | llama-3.1-8b-instant | max_tokens=200-300, temperature=default | groq |
+| Embedding viz | Nomic Atlas | 8,309 posts, 384D, public interactive map | nomic |
 
-### 1) Clone and enter the repository
+---
 
-```bash
-git clone https://github.com/Tapasya-12/NarrativeTracker
-cd NarrativeTracker
-```
+## Performance Optimizations ⚡
 
-### 2) Backend setup (Flask)
+| What | Strategy | Result |
+|---|---|---|
+| Global stats payload | Serialize once at Flask startup | /api/stats?subreddit=all returns in microseconds |
+| Subreddit list | Precompute and cache subreddit aggregates | Fast sidebar boot and consistent counts |
+| Events payload | Pre-serialize timeline markers | Immediate event line rendering |
+| Network payloads | Pre-serialize subreddit/author/source networks | Minimal latency for default graph loads |
+| Source citation graph | Pre-filter source network at min_weight=3 | Reduced payload size and faster render |
+| Topic clusters | Precompute all k values (5, 8, 12, 20) | No online clustering delay |
+| Timeseries cache | Precompute subreddit x granularity (36 entries) | Instant day/week/month switching |
+| Bloc timeseries cache | Precompute 3 granularity bloc datasets | Fast By Bloc toggle |
+| Semantic embedding reuse | _embed_cache dictionary by query string | Repeat queries skip model inference |
+| Response compression | flask-compress gzip responses | Lower transfer time, better WAN performance |
+| Request handling | Flask threaded=True | Better concurrency for parallel panel requests |
+| Heavy component loading | React.lazy + Suspense for NetworkGraph and ClusterView | Smaller initial JS and faster first paint |
+| Viewport-aware mounting | useVisible IntersectionObserver (350px root margin) | Defer mount/fetch until near viewport |
+| Graph render stability | React.memo + useMemo for graph data | Sidebar changes do not rebuild graph data |
+| Node highlight optimization | useRef for sidebarSub in node painter | Eliminated force-graph re-simulation lag |
+
+---
+
+## Semantic Search Validation Examples 🧪
+
+| # | Query | Language | Top Result | Why It's Correct |
+|---|---|---|---|---|
+| 1 | "anger about government overreach" | English | Posts about DOGE mass federal layoffs | Semantic similarity to frustration with executive power — zero word overlap |
+| 2 | "economic anxiety workers losing income" | English | Posts about federal employee termination orders | Captures financial fear concept without matching any keywords | 
+| 3 | "लोकतंत्र में सत्ता का दुरुपयोग" (abuse of power in democracy) | Hindi | English posts about Trump executive overreach | Multilingual model maps Hindi political concept to English equivalent |
+
+---
+
+## Backend API Reference 🔌
+
+| Endpoint | Method | Description | Cached |
+|---|---|---|---|
+| /api/health | GET | System status | No |
+| /api/stats | GET | Dataset statistics, supports ?subreddit= | Partial |
+| /api/subreddits | GET | All communities with post counts | Yes |
+| /api/timeseries | GET | Post volume over time | Yes |
+| /api/timeseries/blocs | GET | Volume by ideological bloc | Yes |
+| /api/events | GET | Political event markers | Yes |
+| /api/network | GET | Network graph data, supports type= and remove_node= | Partial |
+| /api/source_network | GET | News source citation network | Yes |
+| /api/search | GET | Semantic search via FAISS | Embed cached |
+| /api/clusters | GET | HDBSCAN cluster data | Yes |
+| /api/narrative_divergence | GET | Cross-bloc semantic search | Embed cached |
+| /api/velocity | GET | Information propagation analysis | Embed cached |
+| /api/summarize | POST | Groq AI plain-language summary | No |
+| /api/suggest_queries | POST | Groq AI related query suggestions | No |
+| /api/narrative_analysis | POST | Groq AI framing comparison | No |
+| /api/topdomain | GET | Top cited news domains | No |
+
+---
+
+## Local Setup and Reproducibility 🛠️
+
+### Backend Setup
 
 ```bash
 cd backend
-python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# macOS/Linux
-# source .venv/bin/activate
-
 pip install -r requirements.txt
 ```
 
-Create `backend/.env`:
+Create .env in backend:
 
 ```env
-GROQ_API_KEY=your_groq_api_key_here
+GROQ_API_KEY=your_key
 ```
+
+Ensure data folder contains:
+
+- processed.parquet
+- search_meta.parquet
+- faiss.index
+- network_subreddit.json
+- network_author.json
+- network_source.json
+- events.json
+- clusters.json
 
 Run backend:
 
@@ -254,16 +287,16 @@ Run backend:
 python app.py
 ```
 
-Backend runs on `http://localhost:5000`.
+Backend runs on port 5000.
 
-### 3) Frontend setup (React + Vite)
+### Frontend Setup
 
 ```bash
-cd ../frontend
+cd frontend
 npm install
 ```
 
-Create `frontend/.env`:
+Create .env in frontend:
 
 ```env
 VITE_API_URL=http://localhost:5000
@@ -275,62 +308,51 @@ Run frontend:
 npm run dev
 ```
 
-Frontend runs on `http://localhost:5173` (default Vite port).
+Frontend runs on port 5173.
 
-### 4) Optional data build scripts
+### Preprocessing Pipeline (Rebuild From Scratch)
 
-The repository includes preprocessing/build scripts under `backend/` such as:
+```bash
+cd backend
+python preprocess.py
+python build_duckdb.py
+python embed.py
+python build_clusters.py
+python build_network.py
+python fetch_events.py
+```
 
-- `preprocess.py`
-- `embed.py`
-- `build_clusters.py`
-- `build_network.py`
-- `build_duckdb.py`
+---
 
-These are used to regenerate analytic artifacts if you modify the source dataset.
+## Deployment Configuration 🚀
 
--------------------------------------------------------------------------------
+### Backend Deployment: HuggingFace Spaces (Docker)
 
-## Deployment
+| Setting | Value |
+|---|---|
+| Platform | HuggingFace Spaces |
+| SDK | Docker |
+| Exposed port | 7860 |
+| Secret required | GROQ_API_KEY |
+| Large artifact handling | Git LFS for .parquet, .index, .npy |
+| Process command | gunicorn --workers 1 --timeout 120 |
+| Worker count rationale | 1 worker because embedding model footprint is large |
+| Model loading strategy | all-MiniLM-L6-v2 pre-downloaded at Docker build time |
 
-### Backend on HuggingFace Spaces
+### Frontend Deployment: Vercel
 
-Deployed at: https://huggingface.co/spaces/Tapasya-12/narrativetracker-backend
+| Setting | Value |
+|---|---|
+| Platform | Vercel |
+| Root directory | frontend |
+| Framework preset | Vite |
+| Required env var | VITE_API_URL=https://Tapasya-12-narrativetracker-backend.hf.space |
+| Deploy mode | Auto-deploy from GitHub |
 
-1. Space uses Docker SDK with a `Dockerfile` in `backend/`.
-2. Build context is sent from the project root so `data/` files are accessible.
-3. Add environment secret `GROQ_API_KEY` in Space Settings → Repository secrets.
-4. Health check endpoint: `https://Tapasya-12-narrativetracker-backend.hf.space/api/health`
-5. Expected response: `{"status": "ok", "total_posts": 8799}`
+---
 
-### Frontend on Vercel
-
-1. Import repository into Vercel.
-2. Set root directory to `frontend`.
-3. Framework preset: Vite.
-4. Add environment variable: `VITE_API_URL=https://Tapasya-12-narrativetracker-backend.hf.space`
-5. After deploy, update CORS origins in `app.py` with the actual Vercel URL and redeploy to HuggingFace.
-
--------------------------------------------------------------------------------
-
-## Author
+## Author and SimPPL Attribution 👤
 
 Built by Tapasya Patel for the SimPPL Research Engineering internship assignment.
 
--------------------------------------------------------------------------------
-
-## Citation and Acknowledgements
-
-If you use this project structure or analysis framing in your own work, cite as:
-
-```text
-Patel, T. (2026). NarrativeTracker: Political Narrative Analysis Dashboard.
-SimPPL Research Engineering Internship Assignment.
-```
-
-Acknowledgements:
-
-- SimPPL for assignment framing and evaluation rubric.
-- Reddit communities represented in the analysis dataset.
-- Sentence-Transformers, FAISS, DuckDB, HDBSCAN, python-louvain, Recharts, and react-force-graph-2d ecosystems.
-- Nomic Atlas for embedding-map exploration.
+NarrativeTracker was designed as an investigative analysis system for cross-community political discourse: semantic retrieval for conceptual search, timeline instrumentation for event-linked activity changes, and graph analytics for influence and echo-chamber structure.
