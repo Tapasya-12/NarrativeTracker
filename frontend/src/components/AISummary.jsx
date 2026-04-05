@@ -5,17 +5,19 @@ const BASE = import.meta.env.VITE_API_URL || ""
 
 export default function AISummary({ type, data, context }) {
   const [summary, setSummary] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)  // ← start true, not false
   const [error,   setError]   = useState(false)
-  const cancelRef = useRef(null)
+  const hasFired = useRef(false)
 
   useEffect(function() {
-    if (!data || !data.length) return
+    if (!data || !data.length) {
+      setLoading(false)
+      return
+    }
 
-    // Cancel any in-flight request
-    if (cancelRef.current) cancelRef.current = true
+    // Only fire once per data set
+    hasFired.current = false
     var cancelled = false
-    cancelRef.current = false
 
     setLoading(true)
     setSummary("")
@@ -25,7 +27,7 @@ export default function AISummary({ type, data, context }) {
       .post(BASE + "/api/summarize", {
         type,
         data:    data.slice(0, 30),
-        context,
+        context: context || "",
       })
       .then(function(r) {
         if (cancelled) return
@@ -41,11 +43,9 @@ export default function AISummary({ type, data, context }) {
     return function() { cancelled = true }
 
   }, [JSON.stringify(data && data.slice(0, 5)), type])
-  // Note: context intentionally excluded from deps —
-  // it changes every render and would cause infinite refetch
 
+  // Only hide if no data at all
   if (!data || !data.length) return null
-  if (!summary && !loading && !error) return null
 
   return (
     <div style={{
@@ -67,37 +67,31 @@ export default function AISummary({ type, data, context }) {
         AI Summary
       </p>
 
-      {/* Loading — uses your existing skeleton CSS class */}
       {loading && (
         <div style={{ display: "flex", flexDirection: "column", gap: "7px" }}>
           {[100, 88, 70].map(function(w) {
             return (
-              <div
-                key={w}
-                className="skeleton"
-                style={{
-                  height: "11px",
-                  width: w + "%",
-                  borderRadius: "4px",
-                }}
-              />
+              <div key={w} className="skeleton" style={{
+                height: "11px",
+                width: w + "%",
+                borderRadius: "4px",
+              }} />
             )
           })}
         </div>
       )}
 
-      {/* Error */}
       {error && !loading && (
         <p style={{
           fontSize: "13px",
           color: "var(--text-dim)",
           fontStyle: "italic",
+          margin: 0,
         }}>
           AI summary temporarily unavailable
         </p>
       )}
 
-      {/* Summary text */}
       {!loading && !error && summary && (
         <p style={{
           fontSize: "13px",
