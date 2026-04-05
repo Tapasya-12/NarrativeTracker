@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import axios from "axios"
 import {
   LineChart, Line, XAxis, YAxis,
@@ -6,6 +6,7 @@ import {
 } from "recharts"
 import { BLOC_COLORS } from "../App"
 import AISummary from "./AISummary"
+
 
 const BASE = import.meta.env.VITE_API_URL || ""
 
@@ -301,6 +302,18 @@ export default function VelocityChart() {
           return timelinesBySub[sub] && timelinesBySub[sub].length > 0
         })
     : []
+
+  // ── Stable reference for AISummary — only rebuilds when timeline changes ──
+  const aiData = useMemo(function() {
+    if (!data || !data.timeline) return []
+    return data.timeline.map(function(row) {
+      return {
+        created_utc: row.date,
+        subreddit:   row.subreddit,
+        count:       row.count,
+      }
+    })
+  }, [data && data.timeline])
 
   return (
     <section style={{ width: "100%" }}>
