@@ -5,6 +5,7 @@ import {
   Tooltip, ResponsiveContainer,
 } from "recharts"
 import { BLOC_COLORS } from "../App"
+import AISummary from "./AISummary"
 
 const BASE = import.meta.env.VITE_API_URL || ""
 
@@ -495,6 +496,15 @@ export default function VelocityChart() {
                 />
               )
             })}
+
+            {/* AI Summary */}
+            {data && data.first_mover && !loading && (
+            <AISummary
+              type="velocity"
+              data={data.timeline || []}
+              context={"first mover: " + data.first_mover + ", query: " + lastQ}
+            />
+          )}
           </div>
         </div>
       )}
