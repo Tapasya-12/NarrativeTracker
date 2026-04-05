@@ -30,7 +30,7 @@ NarrativeTracker reveals patterns that manual browsing cannot: at the scale of 8
 
 ---
 
-## Live Links and Public Deployments 🌐
+## Live Links and Public Deployments 
 
 | Surface | URL |
 |---|---|
@@ -58,7 +58,7 @@ Implementation note: this codebase prioritizes transparent and reproducible anal
 
 ---
 
-## Dataset Scope and Composition 📊
+## Dataset Scope and Composition 
 
 NarrativeTracker analyzes a Reddit corpus focused on reactions to Trump's return to power, covering July 2024 through February 2025. The dataset was cleaned for spam-heavy off-topic content and then transformed into analysis artifacts for semantic search, clustering, network analytics, and timeline analysis.
 
@@ -97,7 +97,7 @@ Note on mixed bloc quality: r/worldpolitics had a high off-topic spam rate (abou
 
 ---
 
-## Technology Stack and System Architecture 🧱
+## Technology Stack and System Architecture 
 
 ### Frontend
 
@@ -133,7 +133,7 @@ Note on mixed bloc quality: r/worldpolitics had a high off-topic spam rate (abou
 
 ---
 
-## Core Feature Walkthrough 🔍
+## Core Feature Walkthrough 
 
 ### 1) Narrative Divergence Tracker (WOW Feature)
 
@@ -185,7 +185,7 @@ Topic Clusters visualizes all 8,799 posts as an interactive scatter where each d
 
 ---
 
-## Sidebar Global Context System Design 🧭
+## Sidebar Global Context System Design 
 
 The sidebar is implemented as a global context setter, not a local filter. Selecting any subreddit coordinates multiple panels so the analyst can keep one community lens while moving across very different views (stats, semantic retrieval, time trends, and network topology).
 
@@ -201,7 +201,7 @@ Critical architecture decision: steps 2, 3, and 5 are all client-side state tran
 
 ---
 
-## ML and AI Components 🤖
+## ML and AI Components 
 
 | Component | Model / Algorithm | Key Parameters | Library |
 |---|---|---|---|
@@ -217,7 +217,7 @@ Critical architecture decision: steps 2, 3, and 5 are all client-side state tran
 
 ---
 
-## Performance Optimizations ⚡
+## Performance Optimizations 
 
 | What | Strategy | Result |
 |---|---|---|
@@ -239,7 +239,7 @@ Critical architecture decision: steps 2, 3, and 5 are all client-side state tran
 
 ---
 
-## Semantic Search Validation Examples 🧪
+## Semantic Search Validation Examples 
 
 | # | Query | Language | Top Result | Why It's Correct |
 |---|---|---|---|---|
@@ -272,7 +272,7 @@ Critical architecture decision: steps 2, 3, and 5 are all client-side state tran
 
 ---
 
-## Local Setup and Reproducibility 🛠️
+## Local Setup and Reproducibility 
 
 ### Backend Setup
 
@@ -341,7 +341,7 @@ python fetch_events.py
 
 ---
 
-## Deployment Configuration 🚀
+## Deployment Configuration 
 
 ### Backend Deployment: HuggingFace Spaces (Docker)
 
