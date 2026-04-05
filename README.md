@@ -394,7 +394,7 @@ python fetch_events.py
 
 ---
 
-## Author and SimPPL Attribution 👤
+## Author and SimPPL Attribution
 
 Built by Tapasya Patel for the SimPPL Research Engineering internship assignment.
 
